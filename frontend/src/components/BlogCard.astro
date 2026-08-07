@@ -1,0 +1,40 @@
+---
+export interface Props {
+  title: string;
+  url: string;
+  date: Date;
+  summary: string;
+  tags: string[];
+}
+
+const { title, url, date, summary, tags } = Astro.props;
+
+function formatDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+---
+
+<a
+  href={url}
+  class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50"
+>
+  <h2 class="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+    {title}
+  </h2>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+    {summary}
+  </p>
+  <div class="flex flex-wrap gap-1.5 mb-3">
+    {tags.map((tag) => (
+      <span class="inline-block rounded-md bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">
+        {tag}
+      </span>
+    ))}
+  </div>
+  <time datetime={formatDate(date)} class="text-xs text-gray-400 dark:text-gray-500">
+    {formatDate(date)}
+  </time>
+</a>

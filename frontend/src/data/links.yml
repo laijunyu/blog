@@ -1,0 +1,29 @@
+- name: Astro
+  url: "https://astro.build"
+  avatar: "https://astro.build/favicon.svg"
+  description: 现代静态网站生成器，以内容为中心
+
+- name: Tailwind CSS
+  url: "https://tailwindcss.com"
+  avatar: "https://tailwindcss.com/favicons/favicon.ico"
+  description: 实用优先的 CSS 框架
+
+- name: MDN Web Docs
+  url: "https://developer.mozilla.org"
+  avatar: "https://developer.mozilla.org/favicon-48x48.png"
+  description: 权威的 Web 技术文档
+
+- name: GitHub
+  url: "https://github.com"
+  avatar: "https://github.githubassets.com/favicons/favicon.svg"
+  description: 全球最大的代码托管平台
+
+- name: YouTube
+  url: "https://www.youtube.com"
+  avatar: "https://www.youtube.com/favicon.ico"
+  description: 视频分享平台
+
+- name: Wikipedia
+  url: "https://www.wikipedia.org"
+  avatar: "https://www.wikipedia.org/static/favicon/wikipedia.ico"
+  description: 自由的百科全书

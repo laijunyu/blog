@@ -1,0 +1,28 @@
+---
+title: "Astro 入门：构建现代静态网站"
+date: 2026-08-01
+tags: ["Astro", "前端", "静态网站"]
+summary: "Astro 是一个现代化的静态网站构建工具，本文介绍 Astro 的核心概念和基本用法，帮助你快速上手构建高性能网站。"
+---
+
+## 什么是 Astro
+
+Astro 是一个用于构建**内容驱动网站**的框架。它的核心思想是 **Island Architecture（岛屿架构）**，最大限度减少客户端 JavaScript。
+
+## 核心特性
+
+- **零 JavaScript 输出**：默认不会给浏览器发送任何 JavaScript
+- **多框架支持**：可在同一项目中混用 React、Vue、Svelte 等
+- **Content Collections**：内置内容管理，支持类型安全检查
+
+## 创建第一个项目
+
+```bash
+npm create astro@latest
+```
+
+选择 Empty 模板即可开始，项目结构清晰简洁。
+
+## MDX 支持
+
+Astro 原生支持 MDX，可以直接在 Markdown 中使用 JSX 组件，非常适合编写博客和技术文档。

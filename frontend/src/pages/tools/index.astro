@@ -1,0 +1,33 @@
+---
+import { load } from 'js-yaml';
+import rawTools from '../../data/tools.yml?raw';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolCard from '../../components/ToolCard.astro';
+
+const tools = load(rawTools) as Array<{
+  title: string;
+  icon: string;
+  description: string;
+  url: string;
+  tags: string[];
+}>;
+---
+
+<BaseLayout title="工具" description="实用在线工具和常用资源导航">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold tracking-tight mb-2">工具</h1>
+    <p class="text-gray-500 dark:text-gray-400">共 {tools.length} 个工具</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    {tools.map((tool) => (
+      <ToolCard
+        title={tool.title}
+        icon={tool.icon}
+        description={tool.description}
+        url={tool.url}
+        tags={tool.tags}
+      />
+    ))}
+  </div>
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+title: "JavaScript 异步编程进阶"
+date: 2026-07-28
+tags: ["JavaScript", "编程", "异步"]
+summary: "深入理解 Promise、async/await 和事件循环，JavaScript 异步编程的核心概念和高级用法。"
+---
+
+## 事件循环（Event Loop）
+
+JavaScript 是单线程语言，但通过事件循环机制实现了异步操作，而不会阻塞主线程。
+
+## Promise 链
+
+```javascript
+fetch('/api/data')
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+```
+
+## async/await
+
+async/await 是 Promise 的语法糖，让异步代码读起来像同步代码：
+
+```javascript
+async function loadData() {
+  try {
+    const res = await fetch('/api/data');
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+## 并发控制
+
+使用 `Promise.all` 和 `Promise.race` 控制多个异步任务的执行顺序和结果聚合。

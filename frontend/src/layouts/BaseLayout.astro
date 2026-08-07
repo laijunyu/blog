@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = '个人导航站 - 博客、游戏、工具、友链' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | 个人导航站</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+  </head>
+  <script is:inline>
+    (function() {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <body class="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors">
+    <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+      <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3 sm:px-6">
+        <a href="/" class="text-lg font-bold tracking-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          NavHub
+        </a>
+        <nav class="flex items-center gap-4 sm:gap-6 text-sm font-medium">
+          <a href="/blog" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">博客</a>
+          <a href="/games" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">游戏</a>
+          <a href="/tools" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">工具</a>
+          <a href="/links" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">友链</a>
+          <a href="/about" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">关于</a>
+          <ThemeToggle />
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <slot />
+    </main>
+
+    <footer class="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p>&copy; {new Date().getFullYear()} NavHub. All rights reserved.</p>
+      <div class="mt-2 flex justify-center gap-4">
+        <a href="/rss.xml" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">RSS</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>

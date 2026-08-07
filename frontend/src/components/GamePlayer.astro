@@ -1,0 +1,63 @@
+---
+---
+
+<div id="game-player" class="hidden mt-8 rounded-2xl border border-green-200 dark:border-green-800 bg-white dark:bg-gray-900 p-6 transition-all">
+  <div class="flex items-center justify-between mb-4">
+    <h3 id="game-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100"></h3>
+    <button id="game-close" type="button" class="cursor-pointer rounded-md px-3 py-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      关闭 ✕
+    </button>
+  </div>
+  <div class="aspect-video rounded-xl bg-black overflow-hidden">
+    <iframe
+      id="game-frame"
+      class="w-full h-full"
+      sandbox="allow-scripts allow-same-origin allow-pointer-lock"
+      title="Game frame"
+      allow="accelerometer; autoplay; clipboard-write"
+    ></iframe>
+  </div>
+</div>
+
+<script>
+  function playGame(card: HTMLElement) {
+    const player = document.getElementById('game-player');
+    if (!player) return;
+
+    const src = card.dataset.src || '';
+    const title = card.dataset.title || '';
+    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
+    const titleEl = document.getElementById('game-title');
+
+    if (frame) {
+      frame.src = src;
+    }
+    if (titleEl) {
+      titleEl.textContent = title;
+    }
+
+    player.classList.remove('hidden');
+    player.scrollIntoView({ behavior: 'smooth' });
+
+    document.querySelectorAll('.game-card').forEach((c) => {
+      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
+    });
+    card.classList.add('ring-2', 'ring-green-500', 'dark:ring-green-400');
+  }
+
+  document.getElementById('game-close')?.addEventListener('click', () => {
+    const player = document.getElementById('game-player');
+    if (player) player.classList.add('hidden');
+
+    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
+    if (frame) {
+      frame.src = '';
+    }
+
+    document.querySelectorAll('.game-card').forEach((c) => {
+      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
+    });
+  });
+
+  (window as any).playGame = playGame;
+</script>

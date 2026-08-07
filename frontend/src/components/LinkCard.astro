@@ -1,0 +1,30 @@
+---
+export interface Props {
+  name: string;
+  url: string;
+  avatar: string;
+  description: string;
+}
+
+const { name, url, avatar, description } = Astro.props;
+---
+
+<a
+  href={url}
+  target="_blank"
+  rel="noopener noreferrer"
+  class="group flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200/50 dark:hover:shadow-purple-900/50"
+>
+  <img
+    src={avatar}
+    alt={`${name} 头像`}
+    class="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-gray-800"
+    loading="lazy"
+    width="48"
+    height="48"
+  />
+  <div>
+    <h3 class="font-semibold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{name}</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+  </div>
+</a>

@@ -1,0 +1,132 @@
+---
+---
+
+<div class="mb-6 space-y-4">
+  <input
+    id="blog-search-input"
+    type="text"
+    placeholder="搜索标题或标签..."
+    class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors"
+  />
+
+  <div id="blog-tag-bar" class="flex flex-wrap gap-2"></div>
+
+  <p id="blog-search-count" class="text-sm text-gray-500 dark:text-gray-400"></p>
+</div>
+
+<script>
+  function init() {
+    const posts: {
+      title: string;
+      url: string;
+      date: string;
+      summary: string;
+      tags: string[];
+    }[] = (window as any).__BLOG_POSTS__ || [];
+
+    const allTags: string[] = (window as any).__ALL_TAGS__ || [];
+
+    const activeTags = new Set<string>();
+
+    const input = document.getElementById('blog-search-input') as HTMLInputElement | null;
+    const tagBar = document.getElementById('blog-tag-bar') as HTMLElement | null;
+    const countEl = document.getElementById('blog-search-count') as HTMLElement | null;
+    const grid = document.querySelector('.grid') as HTMLElement | null;
+
+    if (!grid || !tagBar || !countEl) return;
+
+    function renderTagBar() {
+      if (!tagBar) return;
+      tagBar.innerHTML = '';
+
+      const allButton = document.createElement('button');
+      allButton.textContent = '全部';
+      allButton.className =
+        'rounded-lg px-3 py-1 text-xs font-medium transition-colors cursor-pointer ' +
+        (activeTags.size === 0
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700');
+      allButton.addEventListener('click', () => {
+        activeTags.clear();
+        filter();
+      });
+      tagBar.appendChild(allButton);
+
+      allTags.forEach((tag) => {
+        const btn = document.createElement('button');
+        btn.textContent = tag;
+        btn.className =
+          'rounded-lg px-3 py-1 text-xs font-medium transition-colors cursor-pointer ' +
+          (activeTags.has(tag)
+            ? 'bg-blue-600 text-white'
+            : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50');
+        btn.addEventListener('click', () => {
+          if (activeTags.has(tag)) {
+            activeTags.delete(tag);
+          } else {
+            activeTags.add(tag);
+          }
+          filter();
+        });
+        tagBar.appendChild(btn);
+      });
+    }
+
+    function filter() {
+      const query = (input?.value || '').toLowerCase();
+
+      const filtered = posts.filter((post) => {
+        const textMatch =
+          !query ||
+          post.title.toLowerCase().includes(query) ||
+          post.tags.some((t) => t.toLowerCase().includes(query));
+        const tagMatch =
+          activeTags.size === 0 ||
+          post.tags.some((t) => activeTags.has(t));
+        return textMatch && tagMatch;
+      });
+
+      renderCards(filtered);
+      renderTagBar();
+      if (countEl) {
+        countEl.textContent = `${filtered.length} / ${posts.length} 篇`;
+      }
+    }
+
+    function renderCards(
+      list: { title: string; url: string; date: string; summary: string; tags: string[] }[]
+    ) {
+      if (!grid) return;
+      grid.innerHTML = list
+        .map((post) => {
+          const d = new Date(post.date);
+          const dateStr =
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0');
+
+          return `
+            <a href="${post.url}" class="group block rounded-xl border border-gray-200-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-zinc-200/50 dark:hover:shadow-zinc-900/50">
+              <h2 class="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${post.title}</h2>
+              <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-3 line-clamp-2">${post.summary}</p>
+              <div class="flex flex-wrap gap-1.5 mb-3">
+                ${post.tags.map((t) => `<span class="inline-block rounded-md bg-blue-50 dark:bg-blue-900/30- px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">${t}</span>`).join('')}
+              </div>
+              <time datetime="${dateStr}" class="text-xs text-zinc-400 dark:text-zinc-500">${dateStr}</time>
+            </a>`;
+        })
+        .join('');
+    }
+
+    input?.addEventListener('input', filter);
+    renderTagBar();
+
+    if (countEl) {
+      countEl.textContent = `${posts.length} / ${posts.length} 篇`;
+    }
+  }
+
+  init();
+</script>

@@ -1,0 +1,33 @@
+---
+export interface Props {
+  icon: string;
+  title: string;
+  description: string;
+  stat?: string;
+  url: string;
+  accent?: string;
+}
+
+const {
+  icon,
+  title,
+  description,
+  stat = '',
+  url,
+  accent = '#3b82f6',
+} = Astro.props;
+---
+
+<a
+  href={url}
+  class="group block rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50"
+  style={`--accent: ${accent}`}
+>
+  <div class="text-4xl mb-4">{icon}</div>
+  <h2 class="text-xl font-semibold mb-2 group-hover:text-[var(--accent)] transition-colors">{title}</h2>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{description}</p>
+  <div class="flex items-center justify-between text-sm">
+    <span class="text-gray-400 dark:text-gray-500">{stat}</span>
+    <span class="text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">&rarr;</span>
+  </div>
+</a>

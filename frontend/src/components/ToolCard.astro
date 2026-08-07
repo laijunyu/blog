@@ -1,0 +1,29 @@
+---
+export interface Props {
+  title: string;
+  icon: string;
+  description: string;
+  url: string;
+  tags: string[];
+}
+
+const { title, icon, description, url, tags } = Astro.props;
+---
+
+<a
+  href={url}
+  target="_blank"
+  rel="noopener noreferrer"
+  class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-200/50 dark:hover:shadow-orange-900/50"
+>
+  <div class="text-4xl mb-3">{icon}</div>
+  <h3 class="text-lg font-semibold mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">{title}</h3>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{description}</p>
+  <div class="flex flex-wrap gap-1.5">
+    {tags.map((tag) => (
+      <span class="inline-block rounded-md bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 text-xs font-medium text-orange-600 dark:text-orange-400">
+        {tag}
+      </span>
+    ))}
+  </div>
+</a>

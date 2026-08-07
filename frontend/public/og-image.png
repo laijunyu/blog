@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="100" y="100" width="1000" height="430" rx="24" fill="none" stroke="#3b82f6" stroke-width="2"/>
+  <text x="600" y="280" text-anchor="middle" font-family="system-ui,sans-serif" font-size="72" font-weight="bold" fill="#ffffff">NavHub</text>
+  <text x="600" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" fill="#94a3b8">个人导航站 - 博客、游戏、工具、友链</text>
+</svg>

@@ -1,0 +1,37 @@
+---
+import { load } from 'js-yaml';
+import rawLinks from '../../data/links.yml?raw';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LinkCard from '../../components/LinkCard.astro';
+
+const links = load(rawLinks) as Array<{
+  name: string;
+  url: string;
+  avatar: string;
+  description: string;
+}>;
+---
+
+<BaseLayout title="友链" description="友情链接，发现更多有趣的站点">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold tracking-tight mb-2">友链</h1>
+    <p class="text-gray-500 dark:text-gray-400">共 {links.length} 个友链</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+    {links.map((link) => (
+      <LinkCard
+        name={link.name}
+        url={link.url}
+        avatar={link.avatar}
+        description={link.description}
+      />
+    ))}
+  </div>
+
+  <div class="mt-12 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
+    <p class="text-gray-500 dark:text-gray-400 text-sm">
+      想交换友链？通过 email@navhub.com 联系我
+    </p>
+  </div>
+</BaseLayout>

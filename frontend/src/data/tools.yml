@@ -1,0 +1,69 @@
+- title: JSON 格式化
+  icon: "📋"
+  description: 在线 JSON 格式化、压缩、验证工具
+  url: "https://www.json.cn"
+  tags:
+    - 开发
+    - 数据处理
+
+- title: 在线正则测试
+  icon: "🔍"
+  description: 实时正则表达式测试与调试工具
+  url: "https://regexr.com"
+  tags:
+    - 开发
+    - 调试
+
+- title: Carbon 代码截图
+  icon: "🎨"
+  description: 生成精美代码截图，适合分享
+  url: "https://carbon.now.sh"
+  tags:
+    - 设计
+    - 分享
+
+- title: 图片压缩
+  icon: "🖼️"
+  description: 在线图片压缩，支持 PNG/JPG/WebP
+  url: "https://tinypng.com"
+  tags:
+    - 设计
+    - 效率
+
+- title: 颜色搭配
+  icon: "🎨"
+  description: 调色板生成器和颜色搭配推荐
+  url: "https://coolors.co"
+  tags:
+    - 设计
+
+- title: Unicode 字符表
+  icon: "🔤"
+  description: 查看和复制 Unicode 特殊字符
+  url: "https://unicode-table.com"
+  tags:
+    - 效率
+
+- title: 在线 IDE
+  icon: "💻"
+  description: 浏览器内代码编辑与实时预览
+  url: "https://codesandbox.io"
+  tags:
+    - 开发
+    - 效率
+
+- title: DevDocs
+  icon: "📚"
+  description: 聚合多语言技术文档，离线可用
+  url: "https://devdocs.io"
+  tags:
+    - 开发
+    - 效率
+
+- title: 在线绘图
+  icon: "✏️"
+  description: 流程图、草图、白板协作工具
+  url: "https://excalidraw.com"
+  tags:
+    - 设计
+    - 效率

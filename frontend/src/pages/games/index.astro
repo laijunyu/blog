@@ -1,0 +1,38 @@
+---
+import { load } from 'js-yaml';
+import rawGames from '../../data/games.yml?raw';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GameCard from '../../components/GameCard.astro';
+import GamePlayer from '../../components/GamePlayer.astro';
+
+const games = load(rawGames) as Array<{
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  src: string;
+  tags: string[];
+}>;
+---
+
+<BaseLayout title="游戏" description="精选小游戏合集，在线即开即玩">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold tracking-tight mb-2">游戏</h1>
+    <p class="text-gray-500 dark:text-gray-400">共 {games.length} 款游戏</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    {games.map((game) => (
+      <GameCard
+        id={game.id}
+        title={game.title}
+        icon={game.icon}
+        description={game.description}
+        src={game.src}
+        tags={game.tags}
+      />
+    ))}
+  </div>
+
+  <GamePlayer />
+</BaseLayout>
