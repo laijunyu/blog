@@ -1,0 +1,33 @@
+---
+export interface Props {
+  count?: number;
+  type?: 'card' | 'detail';
+}
+
+const { count = 6, type = 'card' } = Astro.props;
+---
+
+{
+  type === 'card' && (
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {Array.from({ length: count }).map(() => (
+        <div class="animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" style="height: 160px"></div>
+      ))}
+    </div>
+  )
+}
+
+{
+  type === 'detail' && (
+    <div class="space-y-4 animate-pulse">
+      <div class="h-8 w-2/3 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-1/3 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-full rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-full rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-4/5 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-full rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-3/4 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-4 w-2/3 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+    </div>
+  )
+}

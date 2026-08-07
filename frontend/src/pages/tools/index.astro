@@ -1,33 +1,75 @@
 ---
-import { load } from 'js-yaml';
-import rawTools from '../../data/tools.yml?raw';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ToolCard from '../../components/ToolCard.astro';
-
-const tools = load(rawTools) as Array<{
-  title: string;
-  icon: string;
-  description: string;
-  url: string;
-  tags: string[];
-}>;
+import Skeleton from '../../components/Skeleton.astro';
 ---
 
 <BaseLayout title="工具" description="实用在线工具和常用资源导航">
   <div class="mb-8">
     <h1 class="text-3xl font-bold tracking-tight mb-2">工具</h1>
-    <p class="text-gray-500 dark:text-gray-400">共 {tools.length} 个工具</p>
+    <p id="tool-count" class="text-gray-500 dark:text-gray-400">加载中...</p>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-    {tools.map((tool) => (
-      <ToolCard
-        title={tool.title}
-        icon={tool.icon}
-        description={tool.description}
-        url={tool.url}
-        tags={tool.tags}
-      />
-    ))}
+  <div id="tool-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <Skeleton count={3} type="card" />
   </div>
 </BaseLayout>
+
+<script>
+  import { fetchAllTools } from '../../services/tools';
+  import type { ToolItem } from '../../types';
+
+  const errorHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">加载失败</p>
+      <button id="retry-btn" type="button" class="cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">重试</button>
+    </div>`;
+
+  const emptyHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">📭</div>
+      <p class="text-gray-500 dark:text-gray-400">暂无工具</p>
+    </div>`;
+
+  function cardHTML(tool: ToolItem): string {
+    return `
+      <a href="${tool.url}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-200/50 dark:hover:shadow-orange-900/50">
+        <div class="text-4xl mb-3">${tool.icon}</div>
+        <h3 class="text-lg font-semibold mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">${tool.title}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${tool.description}</p>
+        <div class="flex flex-wrap gap-1.5">
+          ${tool.tags
+            .map(
+              (t) =>
+                `<span class="inline-block rounded-md bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 text-xs font-medium text-orange-600 dark:text-orange-400">${t}</span>`
+            )
+            .join('')}
+        </div>
+      </a>`;
+  }
+
+  async function loadTools() {
+    const grid = document.getElementById('tool-grid') as HTMLElement | null;
+    const countEl = document.getElementById('tool-count') as HTMLElement | null;
+    if (!grid) return;
+
+    const tools = await fetchAllTools();
+
+    if (tools === null) {
+      grid.innerHTML = errorHTML;
+      document.getElementById('retry-btn')?.addEventListener('click', loadTools);
+      return;
+    }
+
+    if (tools.length === 0) {
+      grid.innerHTML = emptyHTML;
+      if (countEl) countEl.textContent = '暂无工具';
+      return;
+    }
+
+    if (countEl) countEl.textContent = `共 ${tools.length} 个工具`;
+    grid.innerHTML = tools.map(cardHTML).join('');
+  }
+
+  loadTools();
+</script>

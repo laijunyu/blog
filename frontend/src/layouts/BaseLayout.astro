@@ -21,6 +21,8 @@ const { title, description = '个人导航站 - 博客、游戏、工具、友�
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="https://my-nav-site.pages.dev/" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <script is:inline>
     (function() {
@@ -31,6 +33,16 @@ const { title, description = '个人导航站 - 博客、游戏、工具、友�
     })();
   </script>
   <body class="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors">
+    <noscript>
+      <div class="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 text-center text-sm">
+        本站需要启用 JavaScript 才能加载内容。
+        <a href="/blog/" class="mx-1 hover:underline">博客</a>
+        <a href="/games/" class="mx-1 hover:underline">游戏</a>
+        <a href="/tools/" class="mx-1 hover:underline">工具</a>
+        <a href="/links/" class="mx-1 hover:underline">友链</a>
+        <a href="/about/" class="mx-1 hover:underline">关于</a>
+      </div>
+    </noscript>
     <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
       <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3 sm:px-6">
         <a href="/" class="text-lg font-bold tracking-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors">

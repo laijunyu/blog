@@ -1,32 +1,16 @@
 ---
-import { load } from 'js-yaml';
-import rawLinks from '../../data/links.yml?raw';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import LinkCard from '../../components/LinkCard.astro';
-
-const links = load(rawLinks) as Array<{
-  name: string;
-  url: string;
-  avatar: string;
-  description: string;
-}>;
+import Skeleton from '../../components/Skeleton.astro';
 ---
 
 <BaseLayout title="友链" description="友情链接，发现更多有趣的站点">
   <div class="mb-8">
     <h1 class="text-3xl font-bold tracking-tight mb-2">友链</h1>
-    <p class="text-gray-500 dark:text-gray-400">共 {links.length} 个友链</p>
+    <p id="link-count" class="text-gray-500 dark:text-gray-400">加载中...</p>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-    {links.map((link) => (
-      <LinkCard
-        name={link.name}
-        url={link.url}
-        avatar={link.avatar}
-        description={link.description}
-      />
-    ))}
+  <div id="link-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+    <Skeleton count={4} type="card" />
   </div>
 
   <div class="mt-12 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
@@ -35,3 +19,65 @@ const links = load(rawLinks) as Array<{
     </p>
   </div>
 </BaseLayout>
+
+<script>
+  import { fetchAllLinks } from '../../services/links';
+  import type { LinkItem } from '../../types';
+
+  const errorHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">加载失败</p>
+      <button id="retry-btn" type="button" class="cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">重试</button>
+    </div>`;
+
+  const emptyHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">📭</div>
+      <p class="text-gray-500 dark:text-gray-400">暂无友链</p>
+    </div>`;
+
+  function cardHTML(link: LinkItem): string {
+    return `
+      <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200/50 dark:hover:shadow-purple-900/50">
+        <img
+          src="${link.avatar}"
+          alt="${link.name} 头像"
+          class="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-gray-800"
+          loading="lazy"
+          width="48"
+          height="48"
+          onerror="this.onerror=null;this.src='/favicon.svg'"
+        />
+        <div>
+          <h3 class="font-semibold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">${link.name}</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${link.description}</p>
+        </div>
+      </a>`;
+  }
+
+  async function loadLinks() {
+    const grid = document.getElementById('link-grid') as HTMLElement | null;
+    const countEl = document.getElementById('link-count') as HTMLElement | null;
+    if (!grid) return;
+
+    const links = await fetchAllLinks();
+
+    if (links === null) {
+      grid.innerHTML = errorHTML;
+      document.getElementById('retry-btn')?.addEventListener('click', loadLinks);
+      return;
+    }
+
+    if (links.length === 0) {
+      grid.innerHTML = emptyHTML;
+      if (countEl) countEl.textContent = '暂无友链';
+      return;
+    }
+
+    if (countEl) countEl.textContent = `共 ${links.length} 个友链`;
+    grid.innerHTML = links.map(cardHTML).join('');
+  }
+
+  loadLinks();
+</script>

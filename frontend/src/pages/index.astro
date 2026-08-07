@@ -7,7 +7,8 @@ const sections = [
     icon: '📝',
     title: '博客',
     description: '技术文章、随笔记录，分享学习与思考',
-    stat: '文章 · 技术 · 生活',
+    stat: '···',
+    statId: 'stat-blog',
     url: '/blog',
     accent: '#3b82f6',
   },
@@ -15,7 +16,8 @@ const sections = [
     icon: '🎮',
     title: '游戏',
     description: '精选小游戏合集，在线即开即玩',
-    stat: '休闲 · 益智 · 经典',
+    stat: '···',
+    statId: 'stat-games',
     url: '/games',
     accent: '#22c55e',
   },
@@ -23,7 +25,8 @@ const sections = [
     icon: '🛠️',
     title: '工具',
     description: '实用在线工具和常用资源导航',
-    stat: '效率 · 开发 · 设计',
+    stat: '···',
+    statId: 'stat-tools',
     url: '/tools',
     accent: '#f97316',
   },
@@ -31,7 +34,8 @@ const sections = [
     icon: '🔗',
     title: '友链',
     description: '友情链接，发现更多有趣的站点',
-    stat: '朋友 · 推荐 · 发现',
+    stat: '···',
+    statId: 'stat-links',
     url: '/links',
     accent: '#a855f7',
   },
@@ -52,6 +56,7 @@ const sections = [
           title={section.title}
           description={section.description}
           stat={section.stat}
+          statId={section.statId}
           url={section.url}
           accent={section.accent}
         />
@@ -59,3 +64,29 @@ const sections = [
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  import { fetchSiteMeta } from '../services/site';
+
+  const statIds = ['stat-blog', 'stat-games', 'stat-tools', 'stat-links'];
+
+  async function loadStats() {
+    const meta = await fetchSiteMeta();
+
+    if (meta) {
+      const values = [meta.postCount, meta.gameCount, meta.toolCount, meta.linkCount];
+      statIds.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(values[i]);
+      });
+      return;
+    }
+
+    statIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '探索 →';
+    });
+  }
+
+  loadStats();
+</script>

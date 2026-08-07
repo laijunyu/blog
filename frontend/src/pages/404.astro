@@ -1,0 +1,96 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Skeleton from '../components/Skeleton.astro';
+---
+
+<BaseLayout title="页面不存在">
+  <div id="article-container">
+    <Skeleton type="detail" />
+  </div>
+</BaseLayout>
+
+<script>
+  import { fetchPostBySlug } from '../services/posts';
+  import type { PostDetail } from '../types';
+  import { formatDate } from '../utils/format';
+  import { renderMarkdown } from '../utils/markdown';
+
+  const generic404HTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">📭</div>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">页面不存在</p>
+      <a href="/" class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        &larr; 返回首页
+      </a>
+    </div>`;
+
+  const notFoundHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">文章不存在或加载失败</p>
+      <a href="/blog/" class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        &larr; 返回博客列表
+      </a>
+    </div>`;
+
+  function renderArticle(post: PostDetail) {
+    const container = document.getElementById('article-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-8">
+        <a href="/" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">首页</a>
+        <span>/</span>
+        <a href="/blog" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">博客</a>
+        <span>/</span>
+        <span>${post.title}</span>
+      </nav>
+      <header class="mb-8">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">${post.title}</h1>
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <time datetime="${formatDate(post.date)}" class="text-gray-400 dark:text-gray-500">${formatDate(post.date)}</time>
+          <div class="flex flex-wrap gap-1.5">
+            ${post.tags
+              .map(
+                (tag) =>
+                  `<a href="/blog/?tag=${encodeURIComponent(tag)}" class="inline-block rounded-md bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">${tag}</a>`
+              )
+              .join('')}
+          </div>
+        </div>
+      </header>
+      <article class="prose dark:prose-invert max-w-none mb-12">
+        ${renderMarkdown(post.body)}
+      </article>
+      <div class="border-t border-gray-200 dark:border-gray-800 pt-6">
+        <a href="/blog/" class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          &larr; 返回博客列表
+        </a>
+      </div>`;
+
+    document.title = `${post.title} | 个人导航站`;
+  }
+
+  async function loadPage() {
+    const pathname = window.location.pathname;
+    const container = document.getElementById('article-container');
+
+    if (!pathname.startsWith('/blog/')) {
+      if (container) container.innerHTML = generic404HTML;
+      return;
+    }
+
+    const slug = pathname.replace(/^\/blog\//, '').replace(/\/+$/, '');
+
+    const post = await fetchPostBySlug(slug);
+
+    if (!post) {
+      if (container) container.innerHTML = notFoundHTML;
+      return;
+    }
+
+    renderArticle(post);
+  }
+
+  loadPage();
+</script>

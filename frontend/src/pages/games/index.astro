@@ -1,38 +1,137 @@
 ---
-import { load } from 'js-yaml';
-import rawGames from '../../data/games.yml?raw';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import GameCard from '../../components/GameCard.astro';
-import GamePlayer from '../../components/GamePlayer.astro';
-
-const games = load(rawGames) as Array<{
-  id: string;
-  title: string;
-  icon: string;
-  description: string;
-  src: string;
-  tags: string[];
-}>;
+import Skeleton from '../../components/Skeleton.astro';
 ---
 
 <BaseLayout title="游戏" description="精选小游戏合集，在线即开即玩">
   <div class="mb-8">
     <h1 class="text-3xl font-bold tracking-tight mb-2">游戏</h1>
-    <p class="text-gray-500 dark:text-gray-400">共 {games.length} 款游戏</p>
+    <p id="game-count" class="text-gray-500 dark:text-gray-400">加载中...</p>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-    {games.map((game) => (
-      <GameCard
-        id={game.id}
-        title={game.title}
-        icon={game.icon}
-        description={game.description}
-        src={game.src}
-        tags={game.tags}
-      />
-    ))}
+  <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <Skeleton count={3} type="card" />
   </div>
 
-  <GamePlayer />
+  <div id="game-player" class="hidden mt-8 rounded-2xl border border-green-200 dark:border-green-800 bg-white dark:bg-gray-900 p-6 transition-all">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="game-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100"></h3>
+      <button id="game-close" type="button" class="cursor-pointer rounded-md px-3 py-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        关闭 ✕
+      </button>
+    </div>
+    <div class="aspect-video rounded-xl bg-black overflow-hidden">
+      <iframe
+        id="game-frame"
+        class="w-full h-full"
+        sandbox="allow-scripts allow-same-origin allow-pointer-lock"
+        title="Game frame"
+        allow="accelerometer; autoplay; clipboard-write"
+      ></iframe>
+    </div>
+  </div>
 </BaseLayout>
+
+<script>
+  import { fetchAllGames } from '../../services/games';
+  import type { GameItem } from '../../types';
+
+  const errorHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <p class="text-gray-500 dark:text-gray-400 mb-4">加载失败</p>
+      <button id="retry-btn" type="button" class="cursor-pointer rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">重试</button>
+    </div>`;
+
+  const emptyHTML = `
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="text-4xl mb-3">📭</div>
+      <p class="text-gray-500 dark:text-gray-400">暂无游戏</p>
+    </div>`;
+
+  function cardHTML(game: GameItem): string {
+    return `
+      <div class="game-card group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-900/50 cursor-pointer">
+        <div class="text-4xl mb-3">${game.icon}</div>
+        <h3 class="text-lg font-semibold mb-1 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">${game.title}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${game.description}</p>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          ${game.tags
+            .map(
+              (t) =>
+                `<span class="inline-block rounded-md bg-green-50 dark:bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">${t}</span>`
+            )
+            .join('')}
+        </div>
+        <div class="text-xs font-medium text-green-600 dark:text-green-400 pointer-events-none">▶ 开始玩</div>
+      </div>`;
+  }
+
+  function playGame(card: HTMLElement) {
+    const player = document.getElementById('game-player');
+    if (!player) return;
+
+    const src = card.dataset.src || '';
+    const title = card.dataset.title || '';
+    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
+    const titleEl = document.getElementById('game-title');
+
+    if (frame) {
+      frame.src = src;
+    }
+    if (titleEl) {
+      titleEl.textContent = title;
+    }
+
+    player.classList.remove('hidden');
+    player.scrollIntoView({ behavior: 'smooth' });
+
+    document.querySelectorAll('.game-card').forEach((c) => {
+      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
+    });
+    card.classList.add('ring-2', 'ring-green-500', 'dark:ring-green-400');
+  }
+
+  function closeGame() {
+    const player = document.getElementById('game-player');
+    if (player) player.classList.add('hidden');
+
+    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
+    if (frame) {
+      frame.src = '';
+    }
+
+    document.querySelectorAll('.game-card').forEach((c) => {
+      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
+    });
+  }
+
+  async function loadGames() {
+    const grid = document.getElementById('game-grid') as HTMLElement | null;
+    const countEl = document.getElementById('game-count') as HTMLElement | null;
+    if (!grid) return;
+
+    const games = await fetchAllGames();
+
+    if (games === null) {
+      grid.innerHTML = errorHTML;
+      document.getElementById('retry-btn')?.addEventListener('click', loadGames);
+      return;
+    }
+
+    if (games.length === 0) {
+      grid.innerHTML = emptyHTML;
+      if (countEl) countEl.textContent = '暂无游戏';
+      return;
+    }
+
+    if (countEl) countEl.textContent = `共 ${games.length} 款游戏`;
+    grid.innerHTML = games.map(cardHTML).join('');
+    grid.querySelectorAll('.game-card').forEach((card) => {
+      card.addEventListener('click', () => playGame(card as HTMLElement));
+    });
+  }
+
+  document.getElementById('game-close')?.addEventListener('click', closeGame);
+  loadGames();
+</script>
