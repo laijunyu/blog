@@ -1,0 +1,19 @@
+name = "my-blog-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# D1 database binding
+[[ d1_databases ]]
+binding = "DB"
+database_name = "my-blog-db"
+database_id = "<在Dashboard创建D1后填入>"
+
+# R2 bucket binding
+[[ r2_buckets ]]
+binding = "BUCKET"
+bucket_name = "my-blog-cdn"
+
+# 非敏感环境变量（也可在 Dashboard 中设置）
+[vars]
+PUBLIC_CDN_URL = "https://cdn.yoursite.com"
+FRONTEND_ORIGIN = "https://myblog.pages.dev"

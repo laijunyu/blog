@@ -1,0 +1,21 @@
+{
+  "name": "my-blog-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "tsc --noEmit",
+    "setup": "./scripts/setup.sh",
+    "setup-db": "wrangler d1 execute my-blog-db --file schema.sql",
+    "seed-db": "wrangler d1 execute my-blog-db --file seed.sql"
+  },
+  "dependencies": {
+    "hono": "^4.8.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260808.1",
+    "typescript": "^5.5.0",
+    "wrangler": "^4.0.0"
+  }
+}

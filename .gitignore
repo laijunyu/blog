@@ -1,0 +1,27 @@
+# Dependency directories
+node_modules/
+api/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+.astro/
+
+# Environment files (must not be committed)
+.env
+.env.*
+.dev.vars
+
+# Wrangler local cache
+.wrangler/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor directories
+.vscode/
+.idea/
