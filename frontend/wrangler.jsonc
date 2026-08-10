@@ -1,0 +1,15 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"name": "my-nav-site",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+  "routes": [{ "pattern": "your-domain.example.com/*", "zone_id": "zone_id_REDACTED" }],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
+	}
+}
