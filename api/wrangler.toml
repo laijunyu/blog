@@ -6,7 +6,7 @@ compatibility_date = "2025-06-01"
 [[ d1_databases ]]
 binding = "DB"
 database_name = "my-blog-db"
-database_id = "<在Dashboard创建D1后填入>"
+database_id = "database_id_REDACTED"
 
 # R2 bucket binding
 [[ r2_buckets ]]

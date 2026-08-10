@@ -5,10 +5,11 @@ import { postsRouter } from './routes/posts';
 import { gamesRouter } from './routes/games';
 import { toolsRouter } from './routes/tools';
 import { linksRouter } from './routes/links';
-import { siteRouter } from './routes/site';
+import { siteRouter, aboutRouter } from './routes/site';
 import { tagsRouter } from './routes/tags';
 import { uploadRouter } from './routes/upload';
 import { authRouter } from './routes/auth';
+import { feedRouter } from './routes/feed';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -35,9 +36,11 @@ app.route('/api/games', gamesRouter);
 app.route('/api/tools', toolsRouter);
 app.route('/api/links', linksRouter);
 app.route('/api/site-meta', siteRouter);
+app.route('/api/about', aboutRouter);
 app.route('/api/tags', tagsRouter);
 
 // Authenticated route
+app.route('/feed.xml', feedRouter);
 app.route('/api/upload', uploadRouter);
 
 // 404 handling
