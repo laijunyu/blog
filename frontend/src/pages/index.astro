@@ -73,8 +73,8 @@ const sections = [
   async function loadStats() {
     const meta = await fetchSiteMeta();
 
-    if (meta) {
-      const values = [meta.postCount, meta.gameCount, meta.toolCount, meta.linkCount];
+    if (meta && meta.counts) {
+      const values = [meta.counts.posts, meta.counts.games, meta.counts.tools, meta.counts.links];
       statIds.forEach((id, i) => {
         const el = document.getElementById(id);
         if (el) el.textContent = String(values[i]);

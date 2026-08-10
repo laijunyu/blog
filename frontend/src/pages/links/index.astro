@@ -37,9 +37,14 @@ import Skeleton from '../../components/Skeleton.astro';
       <p class="text-gray-500 dark:text-gray-400">暂无友链</p>
     </div>`;
 
+  function normalizeUrl(url: string): string {
+    if (!url) return url;
+    return /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  }
+
   function cardHTML(link: LinkItem): string {
     return `
-      <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200/50 dark:hover:shadow-purple-900/50">
+      <a href="${normalizeUrl(link.url)}" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-purple-200/50 dark:hover:shadow-purple-900/50">
         <img
           src="${link.avatar}"
           alt="${link.name} 头像"

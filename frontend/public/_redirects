@@ -1,1 +1,1 @@
-/blog/* /blog/_/ 200
+/blog/:slug/ /blog/_/ 200

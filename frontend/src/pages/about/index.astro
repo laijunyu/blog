@@ -1,60 +1,114 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-const skills = ['Astro', 'TypeScript', 'Tailwind CSS', 'React', 'Vue', 'Node.js', 'Python', 'Docker'];
 ---
 
 <BaseLayout title="关于" description="关于我和这个导航站">
-  <div class="max-w-2xl mx-auto">
+  <div id="about-container" class="max-w-2xl mx-auto">
     <div class="text-center mb-10">
-      <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-4xl mb-4">
-        👨‍💻
+      <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-4xl mb-4 overflow-hidden">
+        <img id="about-avatar" class="w-full h-full object-cover hidden" alt="头像" width="96" height="96" />
+        <span id="about-avatar-fallback">👨‍💻</span>
       </div>
-      <h1 class="text-3xl font-bold tracking-tight mb-2">你好，我是 NavHub</h1>
-      <p class="text-gray-500 dark:text-gray-400">全栈开发者 / 终身学习者</p>
+      <h1 id="about-title" class="text-3xl font-bold tracking-tight mb-2">加载中...</h1>
+      <p id="about-subtitle" class="text-gray-500 dark:text-gray-400"></p>
     </div>
 
-    <div class="prose dark:prose-invert max-w-none mb-8">
-      <p>
-        我热爱技术和开源，喜欢捣鼓各种有趣的项目。这个导航站汇总了我常用的博客、
-        游戏、工具和友链，同时也作为我的技术实验场。
-      </p>
-      <p>
-        站点使用 Astro 构建，搭配 Tailwind CSS 和 MDX，纯静态部署在边缘网络上，
-        追求最快的加载速度和最简单的维护方式。
-      </p>
-    </div>
+    <div id="about-bio" class="prose dark:prose-invert max-w-none mb-8"></div>
 
     <div class="mb-8">
       <h2 class="text-xl font-semibold mb-4">技术栈</h2>
-      <div class="flex flex-wrap gap-2">
-        {skills.map((skill) => (
-          <span class="rounded-lg bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-sm font-medium text-blue-600 dark:text-blue-400">
-            {skill}
-          </span>
-        ))}
-      </div>
+      <div id="about-skills" class="flex flex-wrap gap-2"></div>
     </div>
 
     <div>
       <h2 class="text-xl font-semibold mb-4">社交链接</h2>
-      <div class="flex flex-wrap gap-4">
-        <a href="https://github.com" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          GitHub
-        </a>
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer"
-           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.66A9.935 9.935 0 0024 4.59z"/></svg>
-          Twitter
-        </a>
-        <a href="mailto:email@navhub.com"
-           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h10c2 0 2 2 0 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-10"/><path d="M22 2l-10 10-3-3"/></svg>
-          Email
-        </a>
-      </div>
+      <div id="about-socials" class="flex flex-wrap gap-4"></div>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  function esc(str: string): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  async function loadAbout() {
+    const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
+    const container = document.getElementById('about-container');
+    if (!apiBase || !container) return;
+
+    let data: any = null;
+    try {
+      const res = await fetch(apiBase + '/api/about', { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const json = await res.json();
+        data = json && json.data;
+      }
+    } catch (e) {
+      console.warn('[about] 加载失败', e);
+    }
+
+    if (!data) {
+      container.innerHTML = `
+        <div class="py-16 text-center">
+          <div class="text-4xl mb-3">⚠️</div>
+          <p class="text-gray-500 dark:text-gray-400">加载失败</p>
+        </div>`;
+      return;
+    }
+
+    const avatar = document.getElementById('about-avatar') as HTMLImageElement | null;
+    const avatarFallback = document.getElementById('about-avatar-fallback');
+    if (data.avatar) {
+      avatar!.src = data.avatar;
+      avatar!.classList.remove('hidden');
+      if (avatarFallback) avatarFallback.style.display = 'none';
+    }
+
+    const titleEl = document.getElementById('about-title');
+    if (titleEl) titleEl.textContent = data.aboutTitle || '你好，我是';
+
+    const subtitleEl = document.getElementById('about-subtitle');
+    if (subtitleEl) subtitleEl.textContent = data.aboutSubtitle || '';
+
+    const bioEl = document.getElementById('about-bio');
+    if (bioEl) {
+      bioEl.innerHTML = (data.aboutBio || '')
+        .split(/\n+/)
+        .map((p: string) => `<p>${esc(p)}</p>`)
+        .join('');
+    }
+
+    const skillsEl = document.getElementById('about-skills');
+    if (skillsEl) {
+      const skills: string[] = Array.isArray(data.skills) ? data.skills : [];
+      skillsEl.innerHTML = skills
+        .map(
+          (s) =>
+            `<span class="rounded-lg bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-sm font-medium text-blue-600 dark:text-blue-400">${esc(s)}</span>`
+        )
+        .join('');
+    }
+
+    const socialsEl = document.getElementById('about-socials');
+    if (socialsEl) {
+      const socials: any[] = Array.isArray(data.socials) ? data.socials : [];
+      socialsEl.innerHTML = socials
+        .map((s) => {
+          const label = typeof s === 'string' ? s : (s && (s.label || s.name)) || '';
+          const url = typeof s === 'string' ? '' : (s && s.url) || '';
+          if (!label) return '';
+          if (!url) return `<span class="text-sm text-gray-500 dark:text-gray-400">${esc(label)}</span>`;
+          return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">${esc(label)}</a>`;
+        })
+        .join('');
+    }
+  }
+
+  loadAbout();
+</script>

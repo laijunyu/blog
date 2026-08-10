@@ -8,6 +8,7 @@ export interface Props {
 }
 
 const { title, description = '个人导航站 - 博客、游戏、工具、友链' } = Astro.props;
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 
 <!DOCTYPE html>
@@ -23,7 +24,27 @@ const { title, description = '个人导航站 - 博客、游戏、工具、友�
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:url" content="https://my-nav-site.pages.dev/" />
     <meta name="twitter:card" content="summary_large_image" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href={`${apiBase}/feed.xml`} />
   </head>
+  <script>
+    (function () {
+      const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
+      if (!apiBase) return;
+      fetch(apiBase + '/api/site-meta', { signal: AbortSignal.timeout(5000) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var name = j && j.data && j.data.siteName;
+          if (!name) return;
+          var logo = document.getElementById('site-logo');
+          if (logo) logo.textContent = name;
+          var footer = document.getElementById('site-footer-name');
+          if (footer) footer.textContent = name;
+          var t = document.title.split('|')[0].trim();
+          document.title = t + ' | ' + name;
+        })
+        .catch(function () {});
+    })();
+  </script>
   <script is:inline>
     (function() {
       const stored = localStorage.getItem('theme');
@@ -45,7 +66,7 @@ const { title, description = '个人导航站 - 博客、游戏、工具、友�
     </noscript>
     <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
       <div class="mx-auto max-w-5xl flex items-center justify-between px-4 py-3 sm:px-6">
-        <a href="/" class="text-lg font-bold tracking-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        <a href="/" id="site-logo" class="text-lg font-bold tracking-tight hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
           NavHub
         </a>
         <nav class="flex items-center gap-4 sm:gap-6 text-sm font-medium">
@@ -64,9 +85,9 @@ const { title, description = '个人导航站 - 博客、游戏、工具、友�
     </main>
 
     <footer class="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-      <p>&copy; {new Date().getFullYear()} NavHub. All rights reserved.</p>
+      <p>&copy; {new Date().getFullYear()} <span id="site-footer-name">NavHub</span>. All rights reserved.</p>
       <div class="mt-2 flex justify-center gap-4">
-        <a href="/rss.xml" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">RSS</a>
+        <a href={`${apiBase}/feed.xml`} class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">RSS</a>
         <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">GitHub</a>
       </div>
     </footer>

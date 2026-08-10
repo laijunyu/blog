@@ -31,9 +31,14 @@ import Skeleton from '../../components/Skeleton.astro';
       <p class="text-gray-500 dark:text-gray-400">暂无工具</p>
     </div>`;
 
+  function normalizeUrl(url: string): string {
+    if (!url) return url;
+    return /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  }
+
   function cardHTML(tool: ToolItem): string {
     return `
-      <a href="${tool.url}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-200/50 dark:hover:shadow-orange-900/50">
+      <a href="${normalizeUrl(tool.url)}" target="_blank" rel="noopener noreferrer" class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-orange-200/50 dark:hover:shadow-orange-900/50">
         <div class="text-4xl mb-3">${tool.icon}</div>
         <h3 class="text-lg font-semibold mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">${tool.title}</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${tool.description}</p>

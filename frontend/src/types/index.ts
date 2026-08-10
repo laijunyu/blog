@@ -43,8 +43,10 @@ export interface LinkItem {
 export interface SiteMeta {
   siteName: string;
   slogan: string;
-  postCount: number;
-  gameCount: number;
-  toolCount: number;
-  linkCount: number;
+  counts: {
+    posts: number;
+    games: number;
+    tools: number;
+    links: number;
+  };
 }
