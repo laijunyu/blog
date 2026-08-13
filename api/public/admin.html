@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 | NavHub</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script src="/tailwind/tailwind.min.js"></script>
+<link rel="stylesheet" href="/vditor/dist/index.css">
+<script src="/vditor/dist/index.min.js"></script>
+<script id="vditorI18nScriptzh_CN">window.VditorI18n = {"alignCenter":"居中","alignLeft":"居左","alignRight":"居右","alternateText":"替代文本","bold":"粗体","both":"编辑 & 预览","check":"任务列表","close":"关闭","code":"代码块","code-theme":"代码块主题预览","column":"列","comment":"评论","confirm":"确定","content-theme":"内容主题预览","copied":"已复制","copy":"复制","delete-column":"删除列","delete-row":"删除行","devtools":"开发者工具","down":"下","downloadTip":"该浏览器不支持下载功能","edit":"编辑","edit-mode":"切换编辑模式","emoji":"表情","export":"导出","fileTypeError":"文件类型不允许上传，请压缩后再试","footnoteRef":"脚注标识","fullscreen":"全屏切换","generate":"生成中","headings":"标题","heading1":"一级标题","heading2":"二级标题","heading3":"三级标题","heading4":"四级标题","heading5":"五级标题","heading6":"六级标题","help":"帮助","imageURL":"图片地址","indent":"列表缩进","info":"关于","inline-code":"行内代码","insert-after":"末尾插入行","insert-before":"起始插入行","insertColumnLeft":"在左边插入一列","insertColumnRight":"在右边插入一列","insertRowAbove":"在上方插入一行","insertRowBelow":"在下方插入一行","instantRendering":"即时渲染","italic":"斜体","language":"语言","line":"分隔线","link":"链接","linkRef":"引用标识","list":"无序列表","more":"更多","nameEmpty":"文件名不能为空","ordered-list":"有序列表","outdent":"列表反向缩进","outline":"大纲","over":"超过","performanceTip":"实时预览需 ${x}ms，可点击编辑 & 预览按钮进行关闭","preview":"预览","quote":"引用","record":"开始录音/结束录音","record-tip":"该设备不支持录音功能","recording":"录音中...","redo":"重做","remove":"删除","row":"行","spin":"旋转","splitView":"分屏预览","strike":"删除线","table":"表格","textIsNotEmpty":"文本（不能为空）","title":"标题","tooltipText":"提示文本","undo":"撤销","up":"上","update":"更新","upload":"上传图片或文件","uploadError":"上传错误","uploading":"上传中...","wysiwyg":"所见即所得"};</script><style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .nav-item.active { background: #3b82f6; color: #fff; }
+  .table-row:hover { background: #f8fafc; }
+  .dark .table-row:hover { background: #1f2937; }
+</style>
+</head>
+<body>
+<div id="app" class="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"></div>
+<div id="toast" class="fixed top-4 right-4 z-50 hidden rounded-lg px-4 py-2 text-sm text-white shadow-lg"></div>
+<script>
+(function () {
+  'use strict';
+  var TOKEN_KEY = 'navhub_admin_token';
+  var API = '/api';
+  var state = { token: null, view: 'dashboard', posts: [], games: [], tools: [], links: [], files: [], editor: null, editingPost: null, settings: {}, socials: [], settingsLoaded: false, crudLoaded: false };
+
+  // ---------- 基础工具 ----------
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function toast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'fixed top-4 right-4 z-50 rounded-lg px-4 py-2 text-sm text-white shadow-lg ' + (isError ? 'bg-red-500' : 'bg-green-600');
+    t.style.opacity = '1';
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { t.style.opacity = '0'; }, 2500);
+  }
+  function getToken() { return localStorage.getItem(TOKEN_KEY); }
+  function setToken(t) {
+    state.token = t;
+    if (t) localStorage.setItem(TOKEN_KEY, t);
+    else localStorage.removeItem(TOKEN_KEY);
+  }
+  function logout() { setToken(null); state.view = 'login'; render(); }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    var token = getToken();
+    if (token) opts.headers.Authorization = 'Bearer ' + token;
+    if (opts.json !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(opts.json);
+    }
+    return fetch(API + path, opts).then(function (res) {
+      if (res.status === 401) { toast('登录已过期', true); logout(); throw new Error('unauthorized'); }
+      return res.json();
+    });
+  }
+  function needAuth() {
+    if (!getToken()) { state.view = 'login'; return false; }
+    return true;
+  }
+
+  // ---------- 布局 ----------
+  var NAV = [
+    ['dashboard', '仪表盘', '📊'],
+    ['posts', '文章管理', '📝'],
+    ['games', '游戏管理', '🎮'],
+    ['tools', '工具管理', '🔧'],
+    ['links', '友链管理', '🔗'],
+    ['media', '媒体库', '🖼️'],
+    ['settings', '站点设置', '⚙️']
+  ];
+
+  function shell(content) {
+    return '<div class="flex min-h-screen">' +
+      '<aside class="w-56 shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 hidden md:block">' +
+        '<div class="text-lg font-bold mb-6 px-2">🛠 NavHub 后台</div>' +
+        NAV.map(function (n) {
+          return '<button class="nav-item w-full text-left px-3 py-2 rounded-lg text-sm mb-1 hover:bg-gray-100 dark:hover:bg-gray-800' +
+            (state.view === n[0] ? ' active' : '') + '" onclick="Admin.nav(\'' + n[0] + '\')">' + n[2] + ' ' + n[1] + '</button>';
+        }).join('') +
+        '<button class="w-full text-left px-3 py-2 rounded-lg text-sm mb-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 mt-6" onclick="Admin.logout()">🚪 退出登录</button>' +
+      '</aside>' +
+      '<div class="flex-1 min-w-0">' +
+        '<header class="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-2 overflow-x-auto">' +
+          NAV.map(function (n) {
+            return '<button class="nav-item px-3 py-1.5 rounded-lg text-xs whitespace-nowrap' +
+              (state.view === n[0] ? ' active' : '') + '" onclick="Admin.nav(\'' + n[0] + '\')">' + n[2] + ' ' + n[1] + '</button>';
+          }).join('') +
+          '<button class="nav-item px-3 py-1.5 rounded-lg text-xs whitespace-nowrap text-red-500" onclick="Admin.logout()">🚪退出</button>' +
+        '</header>' +
+        '<main class="p-4 md:p-8">' + content + '</main>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function pageHeader(title, action) {
+    return '<div class="flex items-center justify-between mb-6">' +
+      '<h1 class="text-2xl font-bold">' + title + '</h1>' +
+      (action || '') +
+    '</div>';
+  }
+
+  // ---------- 登录 ----------
+  function loginView() {
+    return '<div class="min-h-screen flex items-center justify-center p-4">' +
+      '<div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">' +
+        '<div class="text-2xl font-bold text-center mb-6">🛠 NavHub 管理后台</div>' +
+        '<div class="space-y-4">' +
+          '<input id="login-user" placeholder="用户名" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-blue-500">' +
+          '<input id="login-pass" type="password" placeholder="密码" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm outline-none focus:border-blue-500" onkeydown="if(event.key===\'Enter\')Admin.login()">' +
+          '<button class="w-full rounded-lg bg-blue-600 text-white py-2.5 text-sm font-medium hover:bg-blue-700" onclick="Admin.login()">登 录</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------- 仪表盘 ----------
+  function dashboardView() {
+    var loading = '<div class="text-gray-500">加载中...</div>';
+    return pageHeader('仪表盘', '') +
+      '<div id="stat-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">' + loading + '</div>' +
+      '<div id="recent-posts">' + loading + '</div>';
+  }
+  function renderDashboard() {
+    api('/site-meta').then(function (r) {
+      var el = document.getElementById('stat-grid');
+      if (!el) return;
+      if (!r || r.code !== 0) return;
+      var d = r.data;
+      var stats = [
+        ['文章', d.counts.posts], ['游戏', d.counts.games],
+        ['工具', d.counts.tools], ['友链', d.counts.links]
+      ];
+      el.innerHTML = stats.map(function (s) {
+        return '<div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">' +
+          '<div class="text-sm text-gray-500">' + s[0] + '</div>' +
+          '<div class="text-3xl font-bold mt-1">' + s[1] + '</div></div>';
+      }).join('');
+    });
+    api('/posts/all').then(function (r) {
+      var el = document.getElementById('recent-posts');
+      if (!el) return;
+      if (!r || r.code !== 0 || !r.data.length) { el.innerHTML = '<div class="text-gray-500">暂无文章</div>'; return; }
+      el.innerHTML = '<h2 class="text-lg font-semibold mb-3">最近文章</h2>' +
+        r.data.slice(0, 5).map(function (p) {
+          return '<div class="flex items-center justify-between bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 mb-2">' +
+            '<span>' + esc(p.title) + '</span>' +
+            '<span class="text-xs ' + (p.status === 'published' ? 'text-green-500' : 'text-amber-500') + '">' + p.status + '</span></div>';
+        }).join('');
+    });
+  }
+
+  // ---------- 文章 ----------
+  function postsView() {
+    return pageHeader('文章管理', '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.nav(\'posts-edit\')">＋ 新建文章</button>') +
+      '<div class="flex gap-2 mb-4">' +
+        '<input id="post-search" placeholder="搜索标题..." class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500 w-64" oninput="Admin.filterPosts()">' +
+        '<select id="post-status" class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none" onchange="Admin.filterPosts()">' +
+          '<option value="">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option>' +
+        '</select>' +
+      '</div>' +
+      '<div id="post-list" class="space-y-2">' + renderPostRows(state.posts) + '</div>';
+  }
+  function renderPostRows(list) {
+    if (!list.length) return '<div class="text-gray-500 py-8 text-center">暂无文章</div>';
+    return list.map(function (p) {
+      return '<div class="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="font-medium truncate">' + (p.pinned ? '<span class="inline-block bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded mr-1.5">置顶</span>' : '') + esc(p.title) + '</div>' +
+          '<div class="text-xs text-gray-500 mt-0.5">' + esc(p.slug) + ' · ' + esc(p.date) + ' · ' + (p.tags || []).join(', ') + '</div>' +
+        '</div>' +
+        '<span class="text-xs text-gray-500">阅读数 ' + (p.views || 0) + '</span>' +
+        '<span class="text-xs px-2 py-1 rounded-full ' + (p.status === 'published' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600') + '">' + p.status + '</span>' +
+        '<button class="text-sm text-blue-600 hover:underline" onclick="Admin.nav(\'posts-edit\',' + p.id + ')">编辑</button>' +
+        '<button class="text-sm text-red-500 hover:underline" onclick="Admin.delPost(' + p.id + ')">删除</button>' +
+      '</div>';
+    }).join('');
+  }
+  function loadPosts() {
+    api('/posts/all').then(function (r) {
+      if (r && r.code === 0) { state.posts = r.data; var el = document.getElementById('post-list'); if (el) el.innerHTML = renderPostRows(r.data); }
+    });
+  }
+  function postEditView(id) {
+    var p = id ? state.posts.find(function (x) { return x.id === id; }) : null;
+    if (id && !p) { state.view = 'posts'; render(); return; }
+    state.editingPost = p || null;
+    var fields =
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">' +
+        '<div><label class="block text-sm font-medium mb-1">标题 *</label><input id="p-title" value="' + esc(p ? p.title : '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">Slug *</label><input id="p-slug" value="' + esc(p ? p.slug : '') + '" placeholder="my-post" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">日期</label><input id="p-date" type="date" value="' + esc(p ? p.date : '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">标签（逗号分隔）</label><input id="p-tags" value="' + esc(p && p.tags ? p.tags.join(', ') : '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">摘要</label><input id="p-summary" value="' + esc(p ? p.summary : '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">封面图 URL</label><input id="p-cover" value="' + esc(p ? p.cover_image : '') + '" placeholder="https://..." class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">状态</label><select id="p-status" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none"><option value="draft"' + (p && p.status === 'draft' ? ' selected' : '') + '>草稿</option><option value="published"' + (p && p.status === 'published' ? ' selected' : '') + '>发布</option></select></div>' +
+        '<div><label class="block text-sm font-medium mb-1">置顶</label><select id="p-pinned" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none"><option value="0"' + (!p || !p.pinned ? ' selected' : '') + '>否</option><option value="1"' + (p && p.pinned ? ' selected' : '') + '>是</option></select></div>' +
+      '</div>';
+    return pageHeader(id ? '编辑文章' : '新建文章', '<button class="rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm mr-2" onclick="Admin.nav(\'posts\')">返回</button>' +
+      '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.savePost()">保存</button>') +
+      fields +
+      '<div id="vditor" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800"></div>';
+  }
+  function initEditor() {
+    var container = document.getElementById('vditor');
+    if (!container || typeof Vditor === 'undefined') return;
+    if (state.editor) { try { state.editor.destroy(); } catch (e) {} state.editor = null; }
+    state.editor = new Vditor('vditor', {
+      value: state.editingPost && state.editingPost.body || '',
+      height: 480,
+      mode: 'ir',
+      cdn: '/vditor',
+      theme: 'classic',
+      upload: {
+        url: API + '/upload',
+        fieldName: 'file',
+        headers: { Authorization: 'Bearer ' + getToken() },
+        max: 10 * 1024 * 1024,
+        format: function (res) {
+          var d = JSON.parse(res);
+          if (d.code === 0) return JSON.stringify({ code: 0, msg: '', data: { errFiles: [], succMap: { image: d.data.url } } });
+          return JSON.stringify({ code: 1, msg: d.message, data: { errFiles: [], succMap: {} } });
+        }
+      }
+    });
+  }
+
+  // ---------- 通用 CRUD（游戏/工具/友链） ----------
+  var CRUD_DEF = {
+    games: {
+      title: '游戏管理', listKey: 'games', fields: [
+        ['title', '标题'], ['icon', '图标'], ['description', '描述'],
+        ['src', '链接地址'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序']
+      ]
+    },
+    tools: {
+      title: '工具管理', listKey: 'tools', fields: [
+        ['title', '标题'], ['icon', '图标'], ['description', '描述'],
+        ['url', '链接地址'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序']
+      ]
+    },
+    links: {
+      title: '友链管理', listKey: 'links', fields: [
+        ['name', '名称'], ['url', '链接'], ['avatar', '头像URL'], ['description', '描述'], ['sort_order', '排序']
+      ]
+    }
+  };
+  function crudView(key) {
+    var def = CRUD_DEF[key];
+    return pageHeader(def.title, '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.crudNew(\'' + key + '\')">＋ 新建</button>') +
+      '<div class="space-y-2">' +
+        state[def.listKey].map(function (item) {
+          var name = item.title || item.name || '';
+          return '<div class="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3">' +
+            '<div class="flex-1 min-w-0"><div class="font-medium truncate">' + esc(name) + '</div><div class="text-xs text-gray-500 truncate">' + esc(item.description || '') + '</div></div>' +
+            '<button class="text-sm text-blue-600 hover:underline" onclick="Admin.crudEdit(\'' + key + '\',' + item.id + ')">编辑</button>' +
+            '<button class="text-sm text-red-500 hover:underline" onclick="Admin.crudDel(\'' + key + '\',' + item.id + ')">删除</button>' +
+          '</div>';
+        }).join('') || '<div class="text-gray-500 py-8 text-center">暂无数据</div>' +
+      '</div>';
+  }
+  function crudForm(key, id) {
+    var def = CRUD_DEF[key];
+    var item = id ? state[def.listKey].find(function (x) { return x.id === id; }) : null;
+    state.editingPost = { crudKey: key, crudId: id, crudItem: item };
+    var rows = def.fields.map(function (f) {
+      var v = item ? item[f[0]] : '';
+      if (f[0] === 'tags' && Array.isArray(v)) v = v.join(', ');
+      return '<div><label class="block text-sm font-medium mb-1">' + f[1] + '</label><input id="c-' + f[0] + '" value="' + esc(v) + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>';
+    }).join('');
+    return pageHeader((id ? '编辑' : '新建') + def.title, '<button class="rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm mr-2" onclick="Admin.nav(\'' + key + '\')">返回</button>' +
+      '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.crudSave(\'' + key + '\')">保存</button>') +
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' + rows + '</div>';
+  }
+  function loadCrud(key) {
+    var def = CRUD_DEF[key];
+    api('/' + key).then(function (r) {
+      if (r && r.code === 0) {
+        state[def.listKey] = r.data;
+        var v = state.view;
+        if (v === key) render();
+      }
+    });
+  }
+  function crudSave(key) {
+    var def = CRUD_DEF[key];
+    var data = {};
+    def.fields.forEach(function (f) {
+      var v = val('c-' + f[0]);
+      if (f[0] === 'tags') v = v.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+      if (f[0] === 'sort_order') v = parseInt(v || '0', 10);
+      data[f[0]] = v;
+    });
+    var id = state.editingPost && state.editingPost.crudId;
+    var p = id
+      ? api('/' + key + '/' + id, { method: 'PUT', json: data })
+      : api('/' + key, { method: 'POST', json: data });
+    p.then(function (r) {
+      if (r.code === 0) { toast('保存成功'); state.view = key; render(); loadCrud(key); }
+      else toast(r.message, true);
+    });
+  }
+
+  // ---------- 媒体库 ----------
+  function mediaView() {
+    return pageHeader('媒体库',
+      '<label class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 cursor-pointer">⬆ 上传文件' +
+      '<input type="file" class="hidden" onchange="Admin.upload(this)"></label>') +
+      '<div id="media-list" class="grid grid-cols-2 md:grid-cols-4 gap-4">' +
+        state.files.map(function (f) {
+          return '<div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3">' +
+            '<div class="text-xs text-gray-500 break-all mb-2">' + esc(f.key) + '</div>' +
+            '<div class="text-xs text-gray-400 mb-2">' + Math.round(f.size / 1024) + ' KB</div>' +
+            '<div class="flex gap-2"><button class="text-xs text-blue-600 hover:underline" onclick="Admin.copyUrl(\'' + esc(f.url) + '\')">复制URL</button>' +
+            '<button class="text-xs text-red-500 hover:underline" onclick="Admin.delFile(\'' + esc(f.key) + '\')">删除</button></div>' +
+          '</div>';
+        }).join('') || '<div class="text-gray-500 col-span-full py-8 text-center">暂无文件</div>' +
+      '</div>';
+  }
+  function loadMedia() {
+    api('/upload/list').then(function (r) {
+      if (r && r.code === 0) { state.files = r.data; var v = state.view; if (v === 'media') render(); }
+    });
+  }
+
+  // ---------- 站点设置 ----------
+  function settingsView() {
+    return pageHeader('站点设置', '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.saveSettings()">保存</button>') +
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">' +
+        '<div><label class="block text-sm font-medium mb-1">站点名称</label><input id="s-siteName" value="' + esc(state.settings.siteName || '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">标语</label><input id="s-slogan" value="' + esc(state.settings.slogan || '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">作者</label><input id="s-author" value="' + esc(state.settings.author || '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">头像图片 URL</label><input id="s-avatar" value="' + esc(state.settings.avatar || '') + '" placeholder="https://..." class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">关于页标题</label><input id="s-aboutTitle" value="' + esc(state.settings.aboutTitle || '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div><label class="block text-sm font-medium mb-1">关于页副标题</label><input id="s-aboutSubtitle" value="' + esc(state.settings.aboutSubtitle || '') + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">关于简介（多行）</label><textarea id="s-aboutBio" rows="5" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500">' + esc(state.settings.aboutBio || '') + '</textarea></div>' +
+        '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">技能（逗号分隔）</label><input id="s-skills" value="' + esc(state.settings.skills || '') + '" placeholder="Astro, TypeScript, Node.js" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>' +
+        '<div class="md:col-span-2"><label class="block text-sm font-medium mb-1">社交链接</label>' +
+          '<div id="social-list" class="space-y-2"></div>' +
+          '<button class="mt-2 rounded-lg border border-dashed border-gray-400 dark:border-gray-600 text-sm px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800" onclick="Admin.addSocial()">＋ 添加链接</button>' +
+        '</div>' +
+      '</div>';
+  }
+  function socialRow(s, i) {
+    s = s || { name: '', url: '' };
+    return '<div class="flex gap-2 items-center">' +
+      '<input id="soc-name-' + i + '" value="' + esc(s.name) + '" placeholder="名称（如 GitHub）" class="w-40 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500">' +
+      '<input id="soc-url-' + i + '" value="' + esc(s.url) + '" placeholder="https://..." class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500">' +
+      '<button class="text-sm text-red-500 hover:underline" onclick="Admin.delSocial(this)">删除</button>' +
+    '</div>';
+  }
+  function renderSocials() {
+    var el = document.getElementById('social-list');
+    if (!el) return;
+    el.innerHTML = state.socials.map(function (s, i) { return socialRow(s, i); }).join('');
+  }
+  function addSocial() {
+    if (!state.settingsLoaded) { toast('设置正在加载，请稍候再添加'); return; }
+    state.socials.push({ name: '', url: '' });
+    renderSocials();
+  }
+  function delSocial(btn) {
+    var row = btn.parentElement;
+    var list = row.parentElement;
+    var idx = Array.prototype.indexOf.call(list.children, row);
+    if (idx >= 0) state.socials.splice(idx, 1);
+    renderSocials();
+  }
+  function loadSettings() {
+    api('/site-meta').then(function (r) {
+      if (!r || r.code !== 0) return;
+      var d = r.data || {};
+      state.settings = {
+        siteName: d.siteName || '', slogan: d.slogan || '', author: d.author || '',
+        avatar: d.avatar || '', aboutTitle: d.aboutTitle || '', aboutSubtitle: d.aboutSubtitle || '',
+        aboutBio: d.aboutBio || '', skills: d.skills || ''
+      };
+      var soc = d.socials;
+      if (typeof soc === 'string') { try { soc = JSON.parse(soc); } catch { soc = []; } }
+      state.socials = Array.isArray(soc) ? soc : [];
+      state.settingsLoaded = true;
+      if (state.view === 'settings') renderSocials();
+    });
+  }
+  function saveSettings() {
+    if (!state.settingsLoaded) { toast('设置正在加载，请稍候再保存'); return; }
+    var data = {
+      siteName: val('s-siteName'), slogan: val('s-slogan'), author: val('s-author'),
+      avatar: val('s-avatar'), aboutTitle: val('s-aboutTitle'), aboutSubtitle: val('s-aboutSubtitle'),
+      aboutBio: val('s-aboutBio'), skills: val('s-skills'),
+      socials: Array.prototype.map.call(document.querySelectorAll('#social-list > div'), function (row) {
+        return {
+          name: ((row.querySelector('[id^="soc-name-"]') || {}).value || '').trim(),
+          url: ((row.querySelector('[id^="soc-url-"]') || {}).value || '').trim()
+        };
+      }).filter(function (s) { return s.name || s.url; })
+    };
+    api('/site-meta/admin', { method: 'PUT', json: data }).then(function (r) {
+      if (r.code === 0) { toast('保存成功'); loadSettings(); }
+      else toast(r.message, true);
+    });
+  }
+
+  // ---------- 渲染 ----------
+  function render() {
+    var app = document.getElementById('app');
+    if (!getToken()) { app.innerHTML = loginView(); return; }
+    var content = '';
+    if (state.view === 'dashboard') content = dashboardView();
+    else if (state.view === 'posts') content = postsView();
+    else if (state.view === 'posts-edit') content = postEditView(state.editingPost && state.editingPost.id);
+    else if (state.view === 'media') content = mediaView();
+    else if (state.view === 'settings') content = settingsView();
+    else if (CRUD_DEF[state.view]) content = crudView(state.view);
+    app.innerHTML = shell(content);
+    if (state.view === 'dashboard') renderDashboard();
+    else if (state.view === 'posts') loadPosts();
+    else if (state.view === 'posts-edit') initEditor();
+    else if (state.view === 'media') loadMedia();
+    else if (state.view === 'settings') {
+      if (!state.settingsLoaded) loadSettings();
+      renderSocials();
+    }
+    else if (CRUD_DEF[state.view] && !state.crudLoaded) { state.crudLoaded = true; loadCrud(state.view); }
+  }
+
+  // ---------- 动作 ----------
+  function nav(v, id) {
+    if (v === 'settings') state.settingsLoaded = false;
+    if (CRUD_DEF[v]) state.crudLoaded = false;
+    if (v === 'posts-edit') {
+      state.editingPost = id ? { id: id } : null;
+      if (id) { var p = state.posts.find(function (x) { return x.id === id; }); if (p) state.editingPost = p; }
+      else if (state.editor) { try { state.editor.destroy(); } catch (e) {} state.editor = null; }
+      state.view = v; render();
+    } else {
+      if (state.editor) { try { state.editor.destroy(); } catch (e) {} state.editor = null; }
+      state.view = v; render();
+    }
+  }
+  function login() {
+    var user = val('login-user'), pass = val('login-pass');
+    if (!user || !pass) { toast('请输入用户名和密码', true); return; }
+    api('/auth/login', { method: 'POST', json: { username: user, password: pass } }).then(function (r) {
+      if (r.code === 0) { setToken(r.data.token); state.view = 'dashboard'; render(); toast('登录成功'); }
+      else toast(r.message, true);
+    }).catch(function () {});
+  }
+  function savePost() {
+    var data = {
+      slug: val('p-slug') || (state.editingPost && state.editingPost.slug) || '',
+      title: val('p-title'),
+      date: val('p-date'),
+      tags: val('p-tags') ? val('p-tags').split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [],
+      summary: val('p-summary'),
+      body: state.editor ? state.editor.getValue() : '',
+      cover_image: val('p-cover'),
+      status: val('p-status') || 'draft',
+      pinned: val('p-pinned') === '1' ? 1 : 0
+    };
+    if (!data.title || !data.slug) { toast('标题和 slug 必填', true); return; }
+    var id = state.editingPost && state.editingPost.id;
+    var p = id
+      ? api('/posts/' + id, { method: 'PUT', json: data })
+      : api('/posts', { method: 'POST', json: data });
+    p.then(function (r) {
+      if (r.code === 0) { toast('保存成功'); state.view = 'posts'; render(); }
+      else toast(r.message, true);
+    });
+  }
+  function delPost(id) {
+    if (!confirm('确定删除该文章？')) return;
+    api('/posts/' + id, { method: 'DELETE' }).then(function (r) {
+      toast(r.code === 0 ? '已删除' : r.message, r.code !== 0);
+      if (r.code === 0) loadPosts();
+    });
+  }
+  function crudNew(key) {
+    state.editingPost = { crudKey: key, crudId: null, crudItem: null };
+    state.view = 'crud-form';
+    render();
+    state.editingPost = { crudKey: key, crudId: null, crudItem: null };
+    var app = document.getElementById('app');
+    var def = CRUD_DEF[key];
+    app.innerHTML = shell(crudForm(key, null));
+  }
+  function crudEdit(key, id) {
+    state.editingPost = { crudKey: key, crudId: id, crudItem: state[key].find(function (x) { return x.id === id; }) };
+    state.view = 'crud-form';
+    render();
+    state.editingPost = { crudKey: key, crudId: id, crudItem: state[key].find(function (x) { return x.id === id; }) };
+    var app = document.getElementById('app');
+    var def = CRUD_DEF[key];
+    app.innerHTML = shell(crudForm(key, id));
+  }
+  function crudDel(key, id) {
+    if (!confirm('确定删除？')) return;
+    api('/' + key + '/' + id, { method: 'DELETE' }).then(function (r) {
+      toast(r.code === 0 ? '已删除' : r.message, r.code !== 0);
+      if (r.code === 0) loadCrud(key);
+    });
+  }
+  function crudSaveFromForm(key) {
+    crudSave(key);
+  }
+  function upload(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('file', file);
+    fetch(API + '/upload', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getToken() },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (r.code === 0) { toast('上传成功'); input.value = ''; loadMedia(); }
+      else toast(r.message, true);
+    });
+  }
+  function copyUrl(u) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(u).then(function () { toast('已复制'); });
+    } else {
+      var t = document.createElement('textarea'); t.value = u; document.body.appendChild(t);
+      t.select(); document.execCommand('copy'); document.body.removeChild(t); toast('已复制');
+    }
+  }
+  function delFile(key) {
+    if (!confirm('确定删除该文件？')) return;
+    api('/upload', { method: 'DELETE', json: { key: key } }).then(function (r) {
+      toast(r.code === 0 ? '已删除' : r.message, r.code !== 0);
+      if (r.code === 0) loadMedia();
+    });
+  }
+  function filterPosts() {
+    var q = (val('post-search') || '').toLowerCase();
+    var s = val('post-status');
+    var list = state.posts.filter(function (p) {
+      var okQ = !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
+      var okS = !s || p.status === s;
+      return okQ && okS;
+    });
+    var el = document.getElementById('post-list');
+    if (el) el.innerHTML = renderPostRows(list);
+  }
+
+  // ---------- 暴露全局 ----------
+  window.Admin = {
+    nav: nav, login: login, logout: logout,
+    savePost: savePost, delPost: delPost, filterPosts: filterPosts,
+    crudNew: crudNew, crudEdit: crudEdit, crudDel: crudDel, crudSave: crudSave,
+    upload: upload, copyUrl: copyUrl, delFile: delFile,
+    saveSettings: saveSettings, addSocial: addSocial, delSocial: delSocial
+  };
+
+  if (getToken()) { state.view = 'dashboard'; }
+  render();
+})();
+</script>
+</body>
+</html>

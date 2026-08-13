@@ -17,8 +17,13 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', logger());
 app.use('/api/*', cors({
   origin: (origin, c) => {
-    // Allow frontend domain and localhost
-    const allowed = [c.env.FRONTEND_ORIGIN, 'http://localhost:4321'];
+    // Allow frontend domain (from env, with http fallback) and localhost
+    const frontend = c.env.FRONTEND_ORIGIN;
+    const allowed = [
+      frontend,
+      frontend ? frontend.replace(/^https:\/\//i, 'http://') : undefined,
+      'http://localhost:4321',
+    ].filter(Boolean) as string[];
     return allowed.includes(origin) ? origin : '';
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -43,8 +48,19 @@ app.route('/api/tags', tagsRouter);
 app.route('/feed.xml', feedRouter);
 app.route('/api/upload', uploadRouter);
 
-// 404 handling
-app.notFound((c) => c.json({ code: 40401, data: null, message: 'Not Found' }, 404));
+// 404 handling — 非 API 路径先尝试静态资产（后台 admin.html），未命中再返回 JSON
+app.notFound(async (c) => {
+  const url = new URL(c.req.url);
+  if (!url.pathname.startsWith('/api/') && url.pathname !== '/feed.xml') {
+    try {
+      const res = await c.env.ASSETS.fetch(c.req.raw);
+      if (res && res.status < 500) return res;
+    } catch {
+      // ignore
+    }
+  }
+  return c.json({ code: 40401, data: null, message: 'Not Found' }, 404);
+});
 
 // Error handling
 app.onError((err, c) => {

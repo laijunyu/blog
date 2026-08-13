@@ -3,6 +3,8 @@ interface Env {
   DB: D1Database;
   // R2 storage binding
   BUCKET: R2Bucket;
+  // Static assets (后台管理页 admin.html)
+  ASSETS: Fetcher;
   // Secrets (Dashboard)
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD: string;

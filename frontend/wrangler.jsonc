@@ -4,7 +4,7 @@
 	"compatibility_flags": ["global_fetch_strictly_public"],
 	"name": "my-nav-site",
 	"main": "@astrojs/cloudflare/entrypoints/server",
-  "routes": [{ "pattern": "your-domain.example.com/*", "zone_id": "zone_id_REDACTED" }],
+  "routes": [{ "pattern": "your-domain.example.com/*", "zone_name": "your-domain.example.com" }],
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"

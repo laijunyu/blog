@@ -1,0 +1,21 @@
+---
+interface Props {
+  slot?: string;
+  compact?: boolean;
+}
+
+const { slot = 'YOUR_AD_SLOT_ID', compact = false } = Astro.props;
+const adClient = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-XXXX';
+---
+
+<div class={compact ? 'my-6' : 'my-8'}>
+  <ins
+    class="adsbygoogle"
+    style="display:block"
+    data-ad-client={adClient}
+    data-ad-slot={slot}
+    data-ad-format="auto"
+    data-full-width-responsive="true"
+  ></ins>
+  <script is:inline>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>

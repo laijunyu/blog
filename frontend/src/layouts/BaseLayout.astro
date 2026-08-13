@@ -9,6 +9,7 @@ export interface Props {
 
 const { title, description = '个人导航站 - 博客、游戏、工具、友链' } = Astro.props;
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
+const adClient = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-XXXX';
 ---
 
 <!DOCTYPE html>
@@ -18,25 +19,29 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title} | 个人导航站</title>
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" id="site-favicon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:url" content="https://my-nav-site.pages.dev/" />
     <meta name="twitter:card" content="summary_large_image" />
 <link rel="alternate" type="application/rss+xml" title="RSS" href={`${apiBase}/feed.xml`} />
+<script async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`} crossorigin="anonymous"></script>
   </head>
   <script>
     (function () {
-      const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
       if (!apiBase) return;
       fetch(apiBase + '/api/site-meta', { signal: AbortSignal.timeout(5000) })
         .then(function (r) { return r.json(); })
         .then(function (j) {
           var name = j && j.data && j.data.siteName;
+          var avatar = j && j.data && j.data.avatar;
           if (!name) return;
           var logo = document.getElementById('site-logo');
           if (logo) logo.textContent = name;
+          var favicon = document.getElementById('site-favicon');
+          if (favicon && avatar) favicon.href = avatar;
           var footer = document.getElementById('site-footer-name');
           if (footer) footer.textContent = name;
           var t = document.title.split('|')[0].trim();

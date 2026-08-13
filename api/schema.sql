@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS posts (
   body TEXT DEFAULT '',
   cover_image TEXT DEFAULT '',
   status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'published')),
+  views INTEGER NOT NULL DEFAULT 0,
+  pinned INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

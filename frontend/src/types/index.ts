@@ -10,6 +10,8 @@ export interface PostItem {
   date: string;
   tags: string[];
   summary: string;
+  views: number;
+  pinned?: number;
 }
 
 export interface PostDetail extends PostItem {

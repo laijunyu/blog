@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Skeleton from '../../components/Skeleton.astro';
 import ErrorState from '../../components/ErrorState.astro';
 import EmptyState from '../../components/EmptyState.astro';
+import AdUnit from '../../components/AdUnit.astro';
 ---
 
 <BaseLayout title="博客" description="技术文章、随笔记录，分享学习与思考">
@@ -25,6 +26,8 @@ import EmptyState from '../../components/EmptyState.astro';
   <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
     <Skeleton count={6} type="card" />
   </div>
+
+  <AdUnit slot="YOUR_AD_SLOT_ID" />
 </BaseLayout>
 
 <script>
@@ -60,7 +63,7 @@ import EmptyState from '../../components/EmptyState.astro';
       .map(
         (post) => `
       <a href="/blog/${post.slug}/" class="group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50">
-        <h2 class="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${post.title}</h2>
+        <h2 class="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${post.pinned ? '<span class="inline-block align-middle bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded mr-1.5">置顶</span>' : ''}${post.title}</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${post.summary}</p>
         <div class="flex flex-wrap gap-1.5 mb-3">
           ${post.tags
@@ -70,7 +73,10 @@ import EmptyState from '../../components/EmptyState.astro';
             )
             .join('')}
         </div>
-        <time datetime="${formatDate(post.date)}" class="text-xs text-gray-400 dark:text-gray-500">${formatDate(post.date)}</time>
+        <div class="flex items-center justify-between">
+          <time datetime="${formatDate(post.date)}" class="text-xs text-gray-400 dark:text-gray-500">${formatDate(post.date)}</time>
+          <span class="text-xs text-gray-400 dark:text-gray-500">阅读数 ${post.views ?? 0}</span>
+        </div>
       </a>`
       )
       .join('');

@@ -36,6 +36,12 @@ export function getStaticPaths() {
       </a>
     </div>`;
 
+  const adClient = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-XXXX';
+  const adHTML = `
+      <div class="my-8">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="${adClient}" data-ad-slot="YOUR_AD_SLOT_ID" data-ad-format="auto" data-full-width-responsive="true"></ins>
+      </div>`;
+
   function renderArticle(post: PostDetail) {
     const container = document.getElementById('article-container');
     if (!container) return;
@@ -45,6 +51,7 @@ export function getStaticPaths() {
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">${post.title}</h1>
         <div class="flex flex-wrap items-center gap-3 text-sm">
           <time datetime="${formatDate(post.date)}" class="text-gray-400 dark:text-gray-500">${formatDate(post.date)}</time>
+          <span class="text-gray-400 dark:text-gray-500">阅读数 <span id="post-views">${post.views ?? 0}</span></span>
           <div class="flex flex-wrap gap-1.5">
             ${post.tags
               .map(
@@ -58,6 +65,7 @@ export function getStaticPaths() {
       <article class="prose dark:prose-invert max-w-none mb-12">
         ${renderMarkdown(post.body)}
       </article>
+      ${adHTML}
       <div class="border-t border-gray-200 dark:border-gray-800 pt-6">
         <a href="/blog/" class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
           &larr; 返回博客列表
@@ -67,6 +75,31 @@ export function getStaticPaths() {
     document.title = `${post.title} | 个人导航站`;
     const breadcrumb = document.getElementById('breadcrumb-title');
     if (breadcrumb) breadcrumb.textContent = post.title;
+
+    const viewedKey = 'viewed:' + post.slug;
+    if (!sessionStorage.getItem(viewedKey)) {
+      sessionStorage.setItem(viewedKey, '1');
+      const apiBase = import.meta.env.PUBLIC_API_BASE_URL;
+      if (apiBase) {
+        fetch(apiBase + '/api/posts/' + encodeURIComponent(post.slug) + '/views', {
+          method: 'POST',
+          signal: AbortSignal.timeout(5000),
+        })
+          .then((r) => r.json())
+          .then((j) => {
+            if (j && j.data && typeof j.data.views === 'number') {
+              const el = document.getElementById('post-views');
+              if (el) el.textContent = String(j.data.views);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+      // ignore
+    }
   }
 
   async function loadArticle() {

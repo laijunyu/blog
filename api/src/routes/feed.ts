@@ -22,8 +22,10 @@ feedRouter.get('/', async (c) => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
 
+  const siteUrl = c.env.FRONTEND_ORIGIN || 'https://example.com';
+
   const items = (results as any[]).map((row) => {
-    const link = `https://your-domain.example.com/blog/${row.slug}/`;
+    const link = `${siteUrl}/blog/${row.slug}/`;
     const pubDate = new Date(row.date).toUTCString();
     const title = esc(row.title);
     const description = esc(row.summary ?? '');
@@ -40,7 +42,7 @@ feedRouter.get('/', async (c) => {
 <rss version="2.0">
   <channel>
     <title>NavHub</title>
-    <link>https://your-domain.example.com/</link>
+    <link>${siteUrl}/</link>
     <description>个人导航站 - 博客、游戏、工具、友链</description>
     <language>zh-CN</language>
 ${items}

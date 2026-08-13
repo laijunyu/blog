@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionCard from '../components/SectionCard.astro';
+import AdUnit from '../components/AdUnit.astro';
 
 const sections = [
   {
@@ -63,6 +64,8 @@ const sections = [
       ))}
     </div>
   </section>
+
+  <AdUnit slot="YOUR_AD_SLOT_ID" />
 </BaseLayout>
 
 <script>

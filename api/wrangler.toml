@@ -2,18 +2,28 @@ name = "my-blog-api"
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
 
-# D1 database binding
+# 自定义域名路由：必须保留，否则下次部署会解绑 api.blog.your-domain.example.com（无 zone_id，非敏感）
+[[routes]]
+pattern = "api.blog.your-domain.example.com"
+custom_domain = true
+
+# 静态资源（后台管理页 admin.html）
+[assets]
+binding = "ASSETS"
+directory = "public"
+
+# D1 database binding（database_id 敏感不入库，wrangler 按名称自动解析）
 [[ d1_databases ]]
 binding = "DB"
 database_name = "my-blog-db"
-database_id = "database_id_REDACTED"
 
 # R2 bucket binding
 [[ r2_buckets ]]
 binding = "BUCKET"
 bucket_name = "my-blog-cdn"
 
-# 非敏感环境变量（也可在 Dashboard 中设置）
-[vars]
-PUBLIC_CDN_URL = "https://cdn.yoursite.com"
-FRONTEND_ORIGIN = "https://myblog.pages.dev"
+# 敏感环境变量（域名/凭据）一律走 Cloudflare Secrets 与本地 .dev.vars，不写入本文件：
+#   FRONTEND_ORIGIN = https://your-domain.example.com
+#   PUBLIC_CDN_URL  = https://cdn.your-domain.example.com
+# 部署后设置：echo "值" | npx wrangler secret put FRONTEND_ORIGIN（PUBLIC_CDN_URL 同理）
+# 本地开发：复制 .dev.vars.example 为 .dev.vars 并填入真实值
