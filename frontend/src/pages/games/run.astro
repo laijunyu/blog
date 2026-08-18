@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="游戏" description="在线小游戏">
+  <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <a href="/games/" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← 返回游戏列表</a>
+      <h1 id="game-title" class="text-2xl font-bold tracking-tight mt-1">加载中...</h1>
+      <p id="game-desc" class="text-sm text-gray-500 dark:text-gray-400 mt-1"></p>
+    </div>
+    <a id="open-new" href="#" target="_blank" rel="noopener noreferrer"
+       class="hidden text-sm rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      在新窗口打开
+    </a>
+  </div>
+
+  <div id="play-wrap" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+    <div class="p-10 text-center text-gray-500 dark:text-gray-400" id="play-status">加载中...</div>
+  </div>
+  <p class="text-xs text-gray-400 dark:text-gray-600 mt-3">提示：部分游戏需点击画面并允许键盘控制（方向键/WASD），支持全屏。</p>
+</BaseLayout>
+
+<script>
+  import { fetchAllGames } from '../../services/games';
+
+  function getSlug(): string {
+    const m = window.location.hash.match(/^#([^/]+)$/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function renderStatus(html: string) {
+    const wrap = document.getElementById('play-wrap');
+    const status = document.getElementById('play-status');
+    if (!wrap || !status) return;
+    status.className = 'p-10 text-center';
+    status.innerHTML = html;
+  }
+
+  async function loadGame() {
+    const titleEl = document.getElementById('game-title');
+    const descEl = document.getElementById('game-desc');
+    const openNew = document.getElementById('open-new') as HTMLAnchorElement | null;
+    const wrap = document.getElementById('play-wrap');
+    const slug = getSlug();
+
+    if (!wrap) return;
+
+    if (!slug) {
+      renderStatus('<div class="text-4xl mb-3">🔍</div><p>无效的游戏地址</p><p class="text-sm mt-2"><a href="/games/" class="text-blue-600 dark:text-blue-400 hover:underline">去游戏列表</a></p>');
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = '加载中...';
+    if (descEl) descEl.textContent = '';
+    if (openNew) openNew.classList.add('hidden');
+    renderStatus('加载中...');
+
+    const games = await fetchAllGames();
+    const game = games.find((g) => g.slug === slug);
+
+    if (!game) {
+      renderStatus('<div class="text-4xl mb-3">⚠️</div><p>游戏不存在或加载失败</p><p class="text-sm mt-2"><a href="/games/" class="text-blue-600 dark:text-blue-400 hover:underline">去游戏列表</a></p>');
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = game.title;
+    if (descEl) descEl.textContent = game.description || '';
+    if (openNew) {
+      openNew.href = game.src;
+      openNew.classList.remove('hidden');
+    }
+
+    wrap.innerHTML = '<iframe id="game-frame" sandbox="allow-scripts allow-pointer-lock allow-fullscreen" class="w-full" style="height: 75vh; border: 0; background: #000" title="' + game.title + '" allow="accelerometer; autoplay; clipboard-write"></iframe>';
+    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
+    if (frame) frame.src = game.src;
+  }
+
+  // 防止方向键/空格滚动播放页（iframe 内的键盘由游戏自身处理）
+  document.addEventListener('keydown', function (e) {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].indexOf(e.key) === -1) return;
+    const el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || (el as HTMLElement).isContentEditable)) return;
+    e.preventDefault();
+  });
+
+  window.addEventListener('hashchange', loadGame);
+  loadGame();
+</script>

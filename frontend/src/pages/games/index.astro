@@ -12,24 +12,6 @@ import Skeleton from '../../components/Skeleton.astro';
   <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
     <Skeleton count={3} type="card" />
   </div>
-
-  <div id="game-player" class="hidden mt-8 rounded-2xl border border-green-200 dark:border-green-800 bg-white dark:bg-gray-900 p-6 transition-all">
-    <div class="flex items-center justify-between mb-4">
-      <h3 id="game-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100"></h3>
-      <button id="game-close" type="button" class="cursor-pointer rounded-md px-3 py-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-        关闭 ✕
-      </button>
-    </div>
-    <div class="aspect-video rounded-xl bg-black overflow-hidden">
-      <iframe
-        id="game-frame"
-        class="w-full h-full"
-        sandbox="allow-scripts allow-same-origin allow-pointer-lock"
-        title="Game frame"
-        allow="accelerometer; autoplay; clipboard-write"
-      ></iframe>
-    </div>
-  </div>
 </BaseLayout>
 
 <script>
@@ -51,7 +33,7 @@ import Skeleton from '../../components/Skeleton.astro';
 
   function cardHTML(game: GameItem): string {
     return `
-      <div class="game-card group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-900/50 cursor-pointer" data-src="${game.src}" data-title="${game.title}">
+      <div class="game-card group block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-900/50 cursor-pointer" data-slug="${game.slug || ''}" data-src="${game.src}" data-title="${game.title}">
         <div class="text-4xl mb-3">${game.icon}</div>
         <h3 class="text-lg font-semibold mb-1 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">${game.title}</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${game.description}</p>
@@ -67,43 +49,14 @@ import Skeleton from '../../components/Skeleton.astro';
       </div>`;
   }
 
-  function playGame(card: HTMLElement) {
-    const player = document.getElementById('game-player');
-    if (!player) return;
-
+  function openGame(card: HTMLElement) {
+    const slug = card.dataset.slug || '';
     const src = card.dataset.src || '';
-    const title = card.dataset.title || '';
-    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
-    const titleEl = document.getElementById('game-title');
-
-    if (frame) {
-      frame.src = src;
+    if (slug) {
+      window.location.href = `/games/run#${slug}`;
+    } else if (src) {
+      window.open(src, '_blank', 'noopener,noreferrer');
     }
-    if (titleEl) {
-      titleEl.textContent = title;
-    }
-
-    player.classList.remove('hidden');
-    player.scrollIntoView({ behavior: 'smooth' });
-
-    document.querySelectorAll('.game-card').forEach((c) => {
-      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
-    });
-    card.classList.add('ring-2', 'ring-green-500', 'dark:ring-green-400');
-  }
-
-  function closeGame() {
-    const player = document.getElementById('game-player');
-    if (player) player.classList.add('hidden');
-
-    const frame = document.getElementById('game-frame') as HTMLIFrameElement | null;
-    if (frame) {
-      frame.src = '';
-    }
-
-    document.querySelectorAll('.game-card').forEach((c) => {
-      c.classList.remove('ring-2', 'ring-green-500', 'dark:ring-green-400');
-    });
   }
 
   async function loadGames() {
@@ -128,10 +81,9 @@ import Skeleton from '../../components/Skeleton.astro';
     if (countEl) countEl.textContent = `共 ${games.length} 款游戏`;
     grid.innerHTML = games.map(cardHTML).join('');
     grid.querySelectorAll('.game-card').forEach((card) => {
-      card.addEventListener('click', () => playGame(card as HTMLElement));
+      card.addEventListener('click', () => openGame(card as HTMLElement));
     });
   }
 
-  document.getElementById('game-close')?.addEventListener('click', closeGame);
   loadGames();
 </script>

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS games (
   description TEXT DEFAULT '',
   src TEXT NOT NULL,
   tags TEXT DEFAULT '[]',
+  slug TEXT DEFAULT '' UNIQUE,
   sort_order INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -41,6 +42,8 @@ CREATE TABLE IF NOT EXISTS tools (
   url TEXT NOT NULL,
   tags TEXT DEFAULT '[]',
   sort_order INTEGER DEFAULT 0,
+  type TEXT DEFAULT 'link' CHECK(type IN ('link', 'embed')),
+  body TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -72,5 +75,6 @@ CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status);
 CREATE INDEX IF NOT EXISTS idx_posts_date ON posts(date DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
 CREATE INDEX IF NOT EXISTS idx_games_sort ON games(sort_order);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_games_slug ON games(slug);
 CREATE INDEX IF NOT EXISTS idx_tools_sort ON tools(sort_order);
 CREATE INDEX IF NOT EXISTS idx_links_sort ON links(sort_order);

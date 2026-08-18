@@ -239,13 +239,15 @@
     games: {
       title: '游戏管理', listKey: 'games', fields: [
         ['title', '标题'], ['icon', '图标'], ['description', '描述'],
-        ['src', '链接地址'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序']
+        ['slug', 'slug(游戏标识，小写字母数字中划线)'], ['src', '链接地址(留空则自动生成)'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序']
       ]
     },
     tools: {
       title: '工具管理', listKey: 'tools', fields: [
         ['title', '标题'], ['icon', '图标'], ['description', '描述'],
-        ['url', '链接地址'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序']
+        ['type', '类型', 'select', [['link', '外链工具'], ['embed', '内嵌工具(本站运行)']]],
+        ['url', '链接地址（外链必填）'], ['tags', '标签(逗号分隔)'], ['sort_order', '排序'],
+        ['body', '内嵌源码（完整 HTML，type=内嵌时使用）', 'textarea']
       ]
     },
     links: {
@@ -270,16 +272,57 @@
   }
   function crudForm(key, id) {
     var def = CRUD_DEF[key];
-    var item = id ? state[def.listKey].find(function (x) { return x.id === id; }) : null;
+    var item = (state.editingPost && state.editingPost.crudItem) || null;
     state.editingPost = { crudKey: key, crudId: id, crudItem: item };
     var rows = def.fields.map(function (f) {
       var v = item ? item[f[0]] : '';
       if (f[0] === 'tags' && Array.isArray(v)) v = v.join(', ');
-      return '<div><label class="block text-sm font-medium mb-1">' + f[1] + '</label><input id="c-' + f[0] + '" value="' + esc(v) + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500"></div>';
+      var label = '<label class="block text-sm font-medium mb-1">' + f[1] + '</label>';
+      var control;
+      if (f[2] === 'select') {
+        control = '<select id="c-' + f[0] + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500">' +
+          (f[3] || []).map(function (o) {
+            return '<option value="' + o[0] + '"' + (String(v) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>';
+          }).join('') + '</select>';
+      } else if (f[2] === 'textarea') {
+        control = '<textarea id="c-' + f[0] + '" rows="14" spellcheck="false" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500">' + esc(v) + '</textarea>';
+      } else {
+        control = '<input id="c-' + f[0] + '" value="' + esc(v) + '" class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-blue-500">';
+      }
+      return '<div' + (f[2] === 'textarea' ? ' class="md:col-span-2"' : '') + '>' + label + control + '</div>';
     }).join('');
     return pageHeader((id ? '编辑' : '新建') + def.title, '<button class="rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm mr-2" onclick="Admin.nav(\'' + key + '\')">返回</button>' +
       '<button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700" onclick="Admin.crudSave(\'' + key + '\')">保存</button>') +
-      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' + rows + '</div>';
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' + rows +
+      (key === 'games' ? uploadZipRow() : '') +
+      '</div>';
+  }
+  function uploadZipRow() {
+    return '<div class="md:col-span-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-4">' +
+      '<label class="block text-sm font-medium mb-1">🎮 游戏包（.zip，根目录须含 index.html）</label>' +
+      '<div class="flex gap-3 items-center">' +
+        '<input type="file" id="c-game-zip" accept=".zip" class="text-sm text-gray-600 dark:text-gray-300">' +
+        '<button class="rounded-lg bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700" onclick="Admin.uploadGameZip()">⬆ 上传游戏包</button>' +
+      '</div>' +
+      '<p class="text-xs text-gray-500 dark:text-gray-400 mt-2">上传后自动解压到 R2 的 games/&lt;slug&gt;/ 并填充链接地址；同 slug 重复上传会覆盖旧版本。上传成功后会自动保存游戏记录。</p>' +
+    '</div>';
+  }
+  function uploadGameZip() {
+    var slug = val('c-slug');
+    if (!slug) { toast('请先填写 slug', true); return; }
+    var input = document.getElementById('c-game-zip');
+    if (!input || !input.files || !input.files[0]) { toast('请先选择 zip 文件', true); return; }
+    var fd = new FormData();
+    fd.append('slug', slug);
+    fd.append('zip', input.files[0]);
+    fd.append('title', val('c-title') || slug);
+    fd.append('icon', val('c-icon') || '🎮');
+    fd.append('description', val('c-description'));
+    fd.append('tags', val('c-tags'));
+    api('/games/upload-zip', { method: 'POST', body: fd }).then(function (r) {
+      if (r.code === 0) { toast('上传成功'); state.view = 'games'; render(); loadCrud('games'); }
+      else toast(r.message, true);
+    });
   }
   function loadCrud(key) {
     var def = CRUD_DEF[key];
@@ -500,6 +543,17 @@
     state.editingPost = { crudKey: key, crudId: id, crudItem: state[key].find(function (x) { return x.id === id; }) };
     var app = document.getElementById('app');
     var def = CRUD_DEF[key];
+    if (key === 'tools') {
+      api('/tools/' + id).then(function (r) {
+        if (r && r.code === 0 && r.data) {
+          state.editingPost.crudItem = r.data;
+          app.innerHTML = shell(crudForm(key, id));
+        } else {
+          toast((r && r.message) || '获取工具详情失败', true);
+        }
+      });
+      return;
+    }
     app.innerHTML = shell(crudForm(key, id));
   }
   function crudDel(key, id) {
@@ -558,6 +612,7 @@
     nav: nav, login: login, logout: logout,
     savePost: savePost, delPost: delPost, filterPosts: filterPosts,
     crudNew: crudNew, crudEdit: crudEdit, crudDel: crudDel, crudSave: crudSave,
+    uploadGameZip: uploadGameZip,
     upload: upload, copyUrl: copyUrl, delFile: delFile,
     saveSettings: saveSettings, addSocial: addSocial, delSocial: delSocial
   };

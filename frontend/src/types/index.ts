@@ -25,14 +25,21 @@ export interface GameItem {
   description: string;
   src: string;
   tags: string[];
+  slug?: string;
 }
 
 export interface ToolItem {
+  id: number;
   title: string;
   icon: string;
   description: string;
   url: string;
   tags: string[];
+  type: 'link' | 'embed';
+}
+
+export interface ToolDetail extends ToolItem {
+  body: string;
 }
 
 export interface LinkItem {

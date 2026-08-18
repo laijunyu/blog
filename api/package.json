@@ -11,6 +11,7 @@
     "seed-db": "wrangler d1 execute my-blog-db --file seed.sql"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "hono": "^4.8.0"
   },
   "devDependencies": {
