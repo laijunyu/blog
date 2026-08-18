@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="工具运行" description="本站内嵌工具运行">
+  <div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <a href="/tools/" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">← 返回工具列表</a>
+      <h1 id="tool-title" class="text-2xl font-bold tracking-tight mt-1">加载中...</h1>
+    </div>
+    <a id="open-new" href="#" target="_blank" rel="noopener noreferrer"
+       class="hidden text-sm rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      在新窗口打开
+    </a>
+  </div>
+  <div id="run-wrap" class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+    <div class="p-10 text-center text-gray-500 dark:text-gray-400" id="run-status">加载中...</div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { fetchToolDetail } from '../../services/tools';
+
+  function getToolId(): number | null {
+    const m = window.location.hash.match(/^#(\d+)$/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function renderStatus(html: string) {
+    const wrap = document.getElementById('run-wrap');
+    const status = document.getElementById('run-status');
+    if (!wrap || !status) return;
+    status.className = 'p-10 text-center';
+    status.innerHTML = html;
+  }
+
+  async function loadTool() {
+    const titleEl = document.getElementById('tool-title');
+    const openNew = document.getElementById('open-new') as HTMLAnchorElement | null;
+    const wrap = document.getElementById('run-wrap');
+    const id = getToolId();
+    if (!wrap) return;
+
+    if (!id) {
+      renderStatus('<div class="text-4xl mb-3">🔍</div><p>无效的工具地址</p><p class="text-sm mt-2"><a href="/tools/" class="text-blue-600 dark:text-blue-400 hover:underline">去工具列表</a></p>');
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = '加载中...';
+    if (openNew) openNew.classList.add('hidden');
+    renderStatus('加载中...');
+
+    const tool = await fetchToolDetail(id);
+    if (!tool) {
+      renderStatus('<div class="text-4xl mb-3">⚠️</div><p>工具不存在或加载失败</p><p class="text-sm mt-2"><a href="/tools/" class="text-blue-600 dark:text-blue-400 hover:underline">去工具列表</a></p>');
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = tool.title;
+
+    if (tool.type !== 'embed' || !tool.body) {
+      renderStatus('<div class="text-4xl mb-3">🔗</div><p>该工具是外链工具，请前往原站使用</p><p class="text-sm mt-2"><a href="' + tool.url + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">打开原链接</a></p>');
+      return;
+    }
+
+    if (openNew) {
+      const blob = new Blob([tool.body], { type: 'text/html' });
+      openNew.href = URL.createObjectURL(blob);
+      openNew.classList.remove('hidden');
+    }
+
+    wrap.innerHTML = '<iframe id="tool-frame" sandbox="allow-scripts" class="w-full" style="height: 75vh; border: 0" title="' + tool.title + '"></iframe>';
+    const frame = document.getElementById('tool-frame') as HTMLIFrameElement | null;
+    if (frame) frame.srcdoc = tool.body;
+  }
+
+  window.addEventListener('hashchange', loadTool);
+  loadTool();
+</script>
